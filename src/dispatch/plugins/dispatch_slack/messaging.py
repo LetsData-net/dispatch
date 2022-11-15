@@ -147,7 +147,7 @@ def create_command_run_in_conversation_where_bot_not_present_message(
 
 
 def create_incident_reported_confirmation_message(
-    title: str, description: str, incident_type: str, incident_priority: str
+    title: str, description: str, incident_type: str, incident_severity: str, incident_priority: str
 ):
     """Creates an incident reported confirmation message."""
     return [
@@ -173,6 +173,10 @@ def create_incident_reported_confirmation_message(
         {
             "type": "section",
             "text": {"type": "mrkdwn", "text": f"*Incident Type*: {incident_type}"},
+        },
+        {
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": f"*Incident Severity*: {incident_severity}"},
         },
         {
             "type": "section",
@@ -244,14 +248,18 @@ def default_notification(items: list):
             block = {"type": "actions", "elements": []}
             for button in item["buttons"]:
                 if button.get("button_text") and button.get("button_value"):
-                    block["elements"].append(
-                        {
-                            "action_id": button["button_action"],
-                            "type": "button",
-                            "text": {"type": "plain_text", "text": button["button_text"]},
-                            "value": button["button_value"],
-                        }
-                    )
+                    element = {
+                        "action_id": button["button_action"],
+                        "type": "button",
+                        "text": {"type": "plain_text", "text": button["button_text"]},
+                        "value": button["button_value"],
+                    }
+
+                    if button.get("button_url"):
+                        element.update({"url": button["button_url"]})
+
+                    block["elements"].append(element)
+
             blocks.append(block)
 
     return blocks
