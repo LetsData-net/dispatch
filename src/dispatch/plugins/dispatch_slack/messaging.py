@@ -17,10 +17,21 @@ from dispatch.messaging.strings import (
     render_message_template,
 )
 
+
+from dispatch.case.enums import CaseMessageTypes
+
+from .messages.case import new_case_created_message
 from .config import SlackConfiguration
 
 
 log = logging.getLogger(__name__)
+
+
+def get_message_type_render_function(message_type: str):
+    """Selects the correct render function based on message type."""
+    message_functions = {CaseMessageTypes.new_case_created: new_case_created_message}
+
+    return message_functions[message_type]
 
 
 def get_incident_conversation_command_message(config: SlackConfiguration, command_string: str):
@@ -188,6 +199,7 @@ def create_incident_reported_confirmation_message(
 def get_template(message_type: MessageType):
     """Fetches the correct template based on message type."""
     template_map = {
+        MessageType.case_created_notification: (new_case_created_message, ""),
         MessageType.evergreen_reminder: (
             default_notification,
             EVERGREEN_REMINDER_DESCRIPTION,
