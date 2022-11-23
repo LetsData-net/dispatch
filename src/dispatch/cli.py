@@ -765,7 +765,7 @@ def run_slack_websocket(organization: str, project: str):
 
     session.close()
     click.secho("Slack websocket process started...", fg="blue")
-    asyncio.run(socket_mode.run_websocket_process(instance.configuration))
+    socket_mode.run_websocket_process(instance.configuration)
 
 
 @dispatch_server.command("shell")
