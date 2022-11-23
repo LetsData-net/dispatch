@@ -141,12 +141,6 @@ def block_action_functions(action: str):
         ConversationButtonActions.provide_feedback: [create_rating_feedback_modal],
         ConversationButtonActions.update_task_status: [update_task_status],
         ConversationButtonActions.monitor_link: [monitor_link],
-        # Note these are temporary for backward compatibility of block ids and should be remove in a future release
-        "ConversationButtonActions.invite_user": [add_user_to_conversation],
-        "ConversationButtonActions.provide_feedback": [create_rating_feedback_modal],
-        "ConversationButtonActions.update_task_status": [
-            update_task_status,
-        ],
         UpdateParticipantCallbackId.update_view: [update_update_participant_modal],
         ReportIncidentCallbackId.update_view: [update_report_incident_modal],
         RunWorkflowCallbackId.update_view: [update_workflow_modal],

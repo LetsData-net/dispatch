@@ -17,10 +17,7 @@ from dispatch.messaging.strings import (
     render_message_template,
 )
 
-
-from dispatch.case.enums import CaseMessageTypes
-
-from .messages.case import new_case_created_message
+from .case.messages import create_case_notification
 from .config import SlackConfiguration
 
 
@@ -29,8 +26,7 @@ log = logging.getLogger(__name__)
 
 def get_message_type_render_function(message_type: str):
     """Selects the correct render function based on message type."""
-    message_functions = {CaseMessageTypes.new_case_created: new_case_created_message}
-
+    message_functions = {MessageType.case_created_notification: create_case_notification}
     return message_functions[message_type]
 
 
@@ -199,7 +195,6 @@ def create_incident_reported_confirmation_message(
 def get_template(message_type: MessageType):
     """Fetches the correct template based on message type."""
     template_map = {
-        MessageType.case_created_notification: (new_case_created_message, ""),
         MessageType.evergreen_reminder: (
             default_notification,
             EVERGREEN_REMINDER_DESCRIPTION,
@@ -297,8 +292,11 @@ def create_message_blocks(
         blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": description}})
 
     for item in items:
-        rendered_items = render_message_template(message_template, **item)
-        blocks += template_func(rendered_items)
+        if message_template:
+            rendered_items = render_message_template(message_template, **item)
+            blocks += template_func(rendered_items)
+        else:
+            blocks += template_func(**item)["blocks"]
 
     blocks_grouped = []
     if items:

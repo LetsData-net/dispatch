@@ -144,6 +144,9 @@ async def handle_slack_event(*, config, client, event, background_tasks):
                 )
 
         db_session.close()
+    else:
+        # let deal with a thread instead
+        pass
 
     return {"ok": ""}
 

@@ -7,7 +7,7 @@ from slack_sdk.web.async_client import AsyncWebClient
 
 from dispatch.plugins.dispatch_slack.menus import handle_slack_menu
 
-from .actions import handle_engage_oncall_action, handle_slack_action
+from .actions import handle_slack_action
 from .commands import handle_slack_command
 from .events import handle_slack_event, EventEnvelope
 
@@ -15,9 +15,16 @@ log = logging.getLogger(__name__)
 
 
 async def run_websocket_process(config):
+    import time
     from slack_sdk.socket_mode.aiohttp import SocketModeClient
     from slack_sdk.socket_mode.response import SocketModeResponse
     from slack_sdk.socket_mode.request import SocketModeRequest
+    from slack_bolt.response import BoltResponse
+    from slack_bolt.app.async_app import AsyncApp
+    from slack_bolt.adapter.socket_mode.async_internals import (
+        send_async_response,
+        run_async_bolt_app,
+    )
 
     # Initialize SocketModeClient with an app-level token + WebClient
     client = SocketModeClient(
@@ -29,9 +36,18 @@ async def run_websocket_process(config):
         ),  # xoxb-111-222-xyz
     )
 
-    async def process(client: SocketModeClient, req: SocketModeRequest):
-        background_tasks = BackgroundTasks()
+    app = AsyncApp(
+        token=config.socket_mode_app_token.get_secret_value(),
+        client=AsyncWebClient(token=config.api_bot_token.get_secret_value()),
+    )
 
+    async def bolt_process(client: SocketModeClient, req: SocketModeRequest):
+        start = time()
+        bolt_resp: BoltResponse = await run_async_bolt_app(app, req)
+        await send_async_response(client, req, bolt_resp, start)
+
+    async def legacy_process(client: SocketModeClient, req: SocketModeRequest):
+        background_tasks = BackgroundTasks()
         if req.type == "events_api":
             response = await handle_slack_event(
                 config=config,
@@ -72,7 +88,9 @@ async def run_websocket_process(config):
 
     # Add a new listener to receive messages from Slack
     # You can add more listeners like this
-    client.socket_mode_request_listeners.append(process)
+    client.socket_mode_request_listeners.append(bolt_process)
+    client.socket_mode_request_listeners.append(legacy_process)
+
     # Establish a WebSocket connection to the Socket Mode servers
     await client.connect()
     await asyncio.sleep(float("inf"))
