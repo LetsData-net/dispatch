@@ -85,8 +85,10 @@ class SlackConversationPlugin(ConversationPlugin):
         if not blocks:
             blocks = create_message_blocks(message_template, notification_type, items, **kwargs)
 
+        messages = []
         for c in chunks(blocks, 50):
-            send_message(client, conversation_id, text, c, persist)
+            messages.append(send_message(client, conversation_id, text, c, persist))
+        return messages
 
     def send_direct(
         self,
