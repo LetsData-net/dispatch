@@ -23,7 +23,6 @@ from .commands import handle_slack_command
 from .events import handle_slack_event, EventEnvelope
 from .menus import handle_slack_menu
 from .actions import handle_block_action, handle_dialog_action, handle_modal_action
-
 from .models import SubjectMetadata
 
 
