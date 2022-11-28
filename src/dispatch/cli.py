@@ -727,13 +727,15 @@ def signals_group():
 @click.argument("project")
 def run_slack_websocket(organization: str, project: str):
     """Runs the slack websocket process."""
-    import asyncio
     from sqlalchemy import true
     from dispatch.project.models import ProjectRead
     from dispatch.project import service as project_service
-    from dispatch.plugins.dispatch_slack import socket_mode
     from dispatch.plugins.dispatch_slack.decorators import get_organization_scope_from_slug
     from dispatch.common.utils.cli import install_plugins
+    from slack_bolt.adapter.socket_mode import SocketModeHandler
+
+    from dispatch.plugins.dispatch_slack.bolt import app
+    from dispatch.plugins.dispatch_slack.case import interactive  # noqa
 
     install_plugins()
 
@@ -764,8 +766,13 @@ def run_slack_websocket(organization: str, project: str):
         return
 
     session.close()
+
     click.secho("Slack websocket process started...", fg="blue")
-    socket_mode.run_websocket_process(instance.configuration)
+    app._token = instance.configuration.api_bot_token.get_secret_value()
+    handler = SocketModeHandler(
+        app, instance.configuration.socket_mode_app_token.get_secret_value()
+    )
+    handler.start()
 
 
 @dispatch_server.command("shell")
