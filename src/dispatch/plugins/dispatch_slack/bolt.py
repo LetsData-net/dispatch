@@ -50,6 +50,16 @@ def message_context_middleware(body, context, next):
     next()
 
 
+def user_middleware(body, db_session, client, context, next):
+    """Attempts to determine the user making the request."""
+    from pprint import pprint
+
+    pprint(body)
+    email = client.users_info(user=body["user_id"])["user"]["profile"]["email"]
+    context["user"] = user_service.get_or_create(db_session=db_session, email=email)
+    next()
+
+
 def slash_command_context_middleware(context, next):
     db_session = SessionLocal()
     organization_slugs = [o.slug for o in organization_service.get_all(db_session=db_session)]
@@ -130,7 +140,7 @@ def custom_error_handler(
             .first()
         )
         config = plugin.instance.configuration
-
+        response = ""
         if body.get("command"):
             response = handle_slack_command(
                 config=config, client=client, request=payload, background_tasks=background_tasks
@@ -141,6 +151,14 @@ def custom_error_handler(
                     config=config,
                     client=client,
                     event=EventEnvelope(**payload),
+                    background_tasks=background_tasks,
+                )
+
+            if body["type"] == "event_callback":
+                response = handle_slack_event(
+                    config=config,
+                    client=client,
+                    event=EventEnvelope(**body),
                     background_tasks=background_tasks,
                 )
 
@@ -170,7 +188,8 @@ def custom_error_handler(
                 response = handle_block_action(config, body, background_tasks)
 
         # this is needed because all of our current functions are async
-        response = asyncio.run(response)
+        if response:
+            response = asyncio.run(response)
         logger.info("BoltUnhandledRequestError: %s", error, exc_info=True)
         return BoltResponse(status=200, body=response)
 
