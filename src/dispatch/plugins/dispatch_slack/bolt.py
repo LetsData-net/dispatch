@@ -16,6 +16,8 @@ from starlette.responses import Response
 from dispatch.database.core import engine, sessionmaker, SessionLocal
 from dispatch.organization import service as organization_service
 from dispatch.conversation import service as conversation_service
+from dispatch.auth import service as user_service
+
 from dispatch.plugin.models import PluginInstance, Plugin
 
 from .actions import handle_slack_action
@@ -26,7 +28,7 @@ from .actions import handle_block_action, handle_dialog_action, handle_modal_act
 from .models import SubjectMetadata
 
 
-app = App(raise_error_for_unhandled_request=True)
+app = App(raise_error_for_unhandled_request=True, token_verification_enabled=False)
 router = APIRouter()
 
 logging.basicConfig(level=logging.DEBUG)
