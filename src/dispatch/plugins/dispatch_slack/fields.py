@@ -84,7 +84,12 @@ def time_picker_input(
     **kwargs,
 ):
     """Builds a time picker input."""
-    pass
+    hour_picker_options = []
+    for h in range(0, 24):
+        h = str(h).zfill(2)
+        hour_picker_options.append(option_from_template(text=f"{h}:00", value=h))
+
+    return Input()
 
 
 def datetime_picker_block(
