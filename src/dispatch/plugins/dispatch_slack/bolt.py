@@ -1,14 +1,11 @@
 import logging
-import asyncio
 from typing import Dict, Any, Optional
 
-from slack_bolt.app import App
-from slack_bolt.error import BoltUnhandledRequestError
+from slack_bolt.app.async_app import AsyncApp
 from slack_bolt.response import BoltResponse
 from slack_bolt.request import BoltRequest
 
-from fastapi import APIRouter, BackgroundTasks
-from sqlalchemy import true
+from fastapi import APIRouter
 
 from starlette.requests import Request
 from starlette.responses import Response
@@ -17,52 +14,47 @@ from dispatch.database.core import engine, sessionmaker, SessionLocal
 from dispatch.organization import service as organization_service
 from dispatch.conversation import service as conversation_service
 from dispatch.auth import service as user_service
+from dispatch.auth.models import DispatchUser
 
-from dispatch.plugin.models import PluginInstance, Plugin
-
-from .actions import handle_slack_action
-from .commands import handle_slack_command
-from .events import handle_slack_event, EventEnvelope
-from .menus import handle_slack_menu
-from .actions import handle_block_action, handle_dialog_action, handle_modal_action
 from .models import SubjectMetadata
 
 
-app = App(raise_error_for_unhandled_request=True, token_verification_enabled=False)
+app = AsyncApp(token="foo", raise_error_for_unhandled_request=True)
 router = APIRouter()
 
 logging.basicConfig(level=logging.DEBUG)
 
 
-def button_context_middleware(payload, context, next):
+async def button_context_middleware(payload, context, next):
     """Attempt to determine the current context of the event."""
     context.update({"subject": SubjectMetadata.parse_raw(payload["value"])})
-    next()
+    await next()
 
 
-def action_context_middleware(body, context, next):
+async def action_context_middleware(body, context, next):
     """Attempt to determine the current context of the event."""
     context.update({"subject": SubjectMetadata.parse_raw(body["view"]["private_metadata"])})
-    next()
+    await next()
 
 
-def message_context_middleware(body, context, next):
+async def message_context_middleware(body, context, next):
     """Attemps to determine the current context of the event."""
     context.update({"subject": SubjectMetadata(**body["message"]["metadata"]["event_payload"])})
-    next()
+    await next()
 
 
-def user_middleware(body, db_session, client, context, next):
+async def user_middleware(body, db_session, client, context, next):
     """Attempts to determine the user making the request."""
-    from pprint import pprint
+    email = (await client.users_info(user=body["user"]["id"]))["user"]["profile"]["email"]
+    context["user"] = user_service.get_or_create(
+        db_session=db_session,
+        organization=context["subject"].organization_slug,
+        user_in=DispatchUser(email=email),
+    )
+    await next()
 
-    pprint(body)
-    email = client.users_info(user=body["user_id"])["user"]["profile"]["email"]
-    context["user"] = user_service.get_or_create(db_session=db_session, email=email)
-    next()
 
-
-def slash_command_context_middleware(context, next):
+async def command_context_middleware(context, respond, next):
     db_session = SessionLocal()
     organization_slugs = [o.slug for o in organization_service.get_all(db_session=db_session)]
     db_session.close()
@@ -82,6 +74,12 @@ def slash_command_context_middleware(context, next):
         if conversation:
             scoped_db_session.close()
             break
+    else:
+        respond(
+            text="Unable to determine command context. Please ensure you are running command from an incident channel.",
+            response_type="ephemeral",
+        )
+        return
 
     context.update(
         {
@@ -93,10 +91,10 @@ def slash_command_context_middleware(context, next):
             )
         }
     )
-    next()
+    await next()
 
 
-def db_middleware(context, next):
+async def db_middleware(context, next):
     if not context.get("subject"):
         db_session = SessionLocal()
         slug = organization_service.get_default(db_session=db_session).slug
@@ -111,95 +109,10 @@ def db_middleware(context, next):
         }
     )
     context["db_session"] = sessionmaker(bind=schema_engine)()
-    next()
+    await next()
 
 
-@app.error
-def custom_error_handler(
-    error: Exception, body: BoltRequest, payload, client, context, logger
-) -> Optional[BoltResponse]:
-
-    # this will handle all legacy slack interactions until they can be moved to bolt
-    if isinstance(error, BoltUnhandledRequestError):
-        background_tasks = BackgroundTasks()
-
-        # There is currently no reasonable way to extract which organization a request refers to.
-        # With the transistion to Bolt organization will be encoded in every message.
-        db_session = SessionLocal()
-        slug = organization_service.get_default(db_session=db_session).slug
-        db_session.close()
-
-        schema_engine = engine.execution_options(
-            schema_translate_map={
-                None: f"dispatch_organization_{slug}",
-            }
-        )
-        db_session = sessionmaker(bind=schema_engine)()
-        plugin = (
-            db_session.query(PluginInstance)
-            .join(Plugin)
-            .filter(PluginInstance.enabled == true(), Plugin.slug == "slack-conversation")
-            .first()
-        )
-        config = plugin.instance.configuration
-        response = ""
-        if body.get("command"):
-            response = handle_slack_command(
-                config=config, client=client, request=payload, background_tasks=background_tasks
-            )
-        else:
-            if body["type"] == "events_api":
-                response = handle_slack_event(
-                    config=config,
-                    client=client,
-                    event=EventEnvelope(**payload),
-                    background_tasks=background_tasks,
-                )
-
-            if body["type"] == "event_callback":
-                response = handle_slack_event(
-                    config=config,
-                    client=client,
-                    event=EventEnvelope(**body),
-                    background_tasks=background_tasks,
-                )
-
-            if body["type"] == "interactive":
-                if payload["type"] == "block_suggestion":
-                    response = handle_slack_menu(
-                        config=config,
-                        client=client,
-                        request=payload,
-                    )
-
-                else:
-                    response = handle_slack_action(
-                        config=config,
-                        client=client,
-                        request=payload,
-                        background_tasks=background_tasks,
-                    )
-
-            if body["type"] == "view_submission":
-                response = handle_modal_action(config, body, background_tasks)
-
-            if body["type"] == "dialog_submission":
-                response = handle_dialog_action(config, body, background_tasks)
-
-            if body["type"] == "block_actions":
-                response = handle_block_action(config, body, background_tasks)
-
-        # this is needed because all of our current functions are async
-        if response:
-            response = asyncio.run(response)
-        logger.info("BoltUnhandledRequestError: %s", error, exc_info=True)
-        return BoltResponse(status=200, body=response)
-
-    logging.exception("Uncaught exception: %s", error)
-    return None
-
-
-def to_bolt_request(
+async def to_bolt_request(
     req: Request,
     body: bytes,
     addition_context_properties: Optional[Dict[str, Any]] = None,
@@ -212,10 +125,10 @@ def to_bolt_request(
     if addition_context_properties is not None:
         for k, v in addition_context_properties.items():
             request.context[k] = v
-    return request
+    return await request
 
 
-def to_starlette_response(bolt_resp: BoltResponse) -> Response:
+async def to_starlette_response(bolt_resp: BoltResponse) -> Response:
     resp = Response(
         status_code=bolt_resp.status,
         content=bolt_resp.body,
@@ -233,11 +146,11 @@ def to_starlette_response(bolt_resp: BoltResponse) -> Response:
                 secure=True,
                 httponly=True,
             )
-    return resp
+    return await resp
 
 
 class SlackRequestHandler:
-    def __init__(self, app: App):  # type: ignore
+    def __init__(self, app: AsyncApp):  # type: ignore
         self.app = app
 
     async def handle(

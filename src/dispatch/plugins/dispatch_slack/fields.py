@@ -1,5 +1,5 @@
 from typing import List
-from blockkit import PlainTextInput, StaticSelect, PlainOption, Input
+from blockkit import PlainTextInput, StaticSelect, PlainOption, Input, DatePicker
 
 from dispatch.enums import DispatchEnum
 from dispatch.database.core import SessionLocal
@@ -19,6 +19,9 @@ class DefaultBlockIds(DispatchEnum):
     project_select = "project-select"
     description_input = "description-input"
     resolution_input = "resolution-input"
+    datetime_picker_input = "datetime-picker-input"
+    date_picker_input = "date-picker-input"
+    time_picker_input = "time-picker-input"
 
     # incidents
     incident_priority_select = "incident-priority-select"
@@ -38,6 +41,9 @@ class DefaultActionIds(DispatchEnum):
     project_select = "project-select"
     description_input = "description-input"
     resolution_input = "resolution-input"
+    datetime_picker_input = "datetime-picker-input"
+    date_picker_input = "date-picker-input"
+    time_picker_input = "time-picker-input"
 
     # incidents
     incident_priority_select = "incident-priority-select"
@@ -52,13 +58,54 @@ class DefaultActionIds(DispatchEnum):
     case_type_select = "case-type-select"
 
 
-def static_select_block(
-    placeholder: str,
-    options: List[str],
-    label: str = None,
-    block_id: str = None,
-    action_id: str = None,
+def date_picker_input(
+    action_id: str = DefaultActionIds.date_picker_input,
+    block_id: str = DefaultBlockIds.date_picker_input,
+    initial_date: str = None,
+    label: str = "Date",
+    **kwargs,
+):
+    """Builds a date picker input."""
+    return Input(
+        element=DatePicker(
+            action_id=action_id, initial_date=initial_date, placeholder="Select Date"
+        ),
+        block_id=block_id,
+        label=label,
+        **kwargs,
+    )
+
+
+def time_picker_input(
+    action_id: str = DefaultActionIds.time_picker_input,
+    block_id: str = DefaultBlockIds.time_picker_input,
     initial_option: str = None,
+    label: str = "Time",
+    **kwargs,
+):
+    """Builds a time picker input."""
+    pass
+
+
+def datetime_picker_block(
+    action_id: str = None,
+    block_id: str = None,
+    initial_option: str = None,
+    label: str = None,
+    **kwargs,
+):
+    """Builds a datetime picker block"""
+
+    pass
+
+
+def static_select_block(
+    options: List[str],
+    placeholder: str,
+    action_id: str = None,
+    block_id: str = None,
+    initial_option: str = None,
+    label: str = None,
     **kwargs,
 ):
     """Builds a static select block."""
