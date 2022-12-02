@@ -30,21 +30,9 @@ def create_case_notification(case: Case, channel_id: str):
             text=f"*Description* \n {case.description} Additional information is available in the <{case.case_document.weblink}|case document>."
         ),
         Section(
-<<<<<<< HEAD
             fields=[
                 f"*Assignee* \n {case.assignee}",
                 f"*Status* \n {case.status}",
-=======
-            text="*Assignee*",
-            accessory=UsersSelect(
-                initial_user=case.assignee.email,
-                placeholder="Select Assignee",
-                action_id=CaseNotificationActions.reassign,
-            ),
-        ),
-        Section(
-            fields=[
->>>>>>> d8b0a46c009559648caf5113f4bfedc2921bb38e
                 f"*Severity* \n {case.case_severity.name}",
                 f"*Type* \n {case.case_type.name}",
                 f"*Priority* \n {case.case_priority.name}",
