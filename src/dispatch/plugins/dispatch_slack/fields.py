@@ -1,9 +1,10 @@
 from typing import List
-from blockkit import PlainTextInput, StaticSelect, PlainOption, Input, DatePicker
+from blockkit import PlainTextInput, StaticSelect, PlainOption, Input, DatePicker, Section
 
 from dispatch.enums import DispatchEnum
 from dispatch.database.core import SessionLocal
 from dispatch.project import service as project_service
+from dispatch.participant.models import Participant
 from dispatch.case.enums import CaseStatus
 from dispatch.case.type import service as case_type_service
 from dispatch.case.priority import service as case_priority_service
@@ -21,7 +22,8 @@ class DefaultBlockIds(DispatchEnum):
     resolution_input = "resolution-input"
     datetime_picker_input = "datetime-picker-input"
     date_picker_input = "date-picker-input"
-    time_picker_input = "time-picker-input"
+    minute_picker_input = "minute-picker-input"
+    hour_picker_input = "hour-picker-input"
 
     # incidents
     incident_priority_select = "incident-priority-select"
@@ -43,7 +45,8 @@ class DefaultActionIds(DispatchEnum):
     resolution_input = "resolution-input"
     datetime_picker_input = "datetime-picker-input"
     date_picker_input = "date-picker-input"
-    time_picker_input = "time-picker-input"
+    minute_picker_input = "minute-picker-input"
+    hour_picker_input = "hour-picker-input"
 
     # incidents
     incident_priority_select = "incident-priority-select"
@@ -76,20 +79,58 @@ def date_picker_input(
     )
 
 
-def time_picker_input(
-    action_id: str = DefaultActionIds.time_picker_input,
-    block_id: str = DefaultBlockIds.time_picker_input,
+def hour_picker_input(
+    action_id: str = DefaultActionIds.hour_picker_input,
+    block_id: str = DefaultBlockIds.hour_picker_input,
     initial_option: str = None,
-    label: str = "Time",
+    label: str = "hour",
     **kwargs,
 ):
-    """Builds a time picker input."""
-    hour_picker_options = []
-    for h in range(0, 24):
-        h = str(h).zfill(2)
-        hour_picker_options.append(option_from_template(text=f"{h}:00", value=h))
+    """Builds a hour picker input."""
+    hours = [str(h).zfill(2) for h in range(0, 24)]
+    return static_select_block(
+        action_id=action_id,
+        block_id=block_id,
+        initial_option=initial_option,
+        options=hours,
+        placeholder="Hour",
+    )
 
-    return Input()
+
+def minute_picker_input(
+    action_id: str = DefaultActionIds.minute_picker_input,
+    block_id: str = DefaultBlockIds.minute_picker_input,
+    initial_option: str = None,
+    label: str = "Minute",
+    **kwargs,
+):
+    """Builds a minute picker input."""
+    minutes = [str(m).zfill(2) for m in range(0, 60)]
+    return static_select_block(
+        action_id=action_id,
+        block_id=block_id,
+        initial_option=initial_option,
+        options=minutes,
+        placeholder="Minute",
+    )
+
+
+def timezone_picker_input(
+    action_id: str = DefaultActionIds.timezone_picker_input,
+    block_id: str = DefaultBlockIds.timezone_picker_input,
+    initial_option: str = "Local time from Slack profile",
+    label: str = "Timezone",
+    **kwargs,
+):
+    """Builds a timezone picker input."""
+    timezones = ["Local time form Slack profile", "Coordinated Universal Time (UTC)"]
+    return static_select_block(
+        action_id=action_id,
+        block_id=block_id,
+        initial_option=initial_option,
+        options=timezones,
+        placeholder="Timezone",
+    )
 
 
 def datetime_picker_block(
@@ -100,8 +141,15 @@ def datetime_picker_block(
     **kwargs,
 ):
     """Builds a datetime picker block"""
-
-    pass
+    return Section(
+        block_id=block_id,
+        fields=[
+            date_picker_input(),
+            hour_picker_input(),
+            minute_picker_input(),
+            timezone_picker_input(),
+        ],
+    )
 
 
 def static_select_block(
@@ -337,9 +385,9 @@ def case_priority_select(
 
 
 def case_status_select(
-    action_id=DefaultActionIds.case_status_select,
-    block_id=DefaultBlockIds.case_status_select,
-    label="Case Status",
+    action_id: str = DefaultActionIds.case_status_select,
+    block_id: str = DefaultBlockIds.case_status_select,
+    label: str = "Case Status",
     initial_option: str = None,
     **kwargs,
 ):
@@ -358,9 +406,9 @@ def case_status_select(
 
 def case_severity_select(
     db_session: SessionLocal,
-    action_id=DefaultActionIds.case_severity_select,
-    block_id=DefaultBlockIds.case_severity_select,
-    label="Case Severity",
+    action_id: str = DefaultActionIds.case_severity_select,
+    block_id: str = DefaultBlockIds.case_severity_select,
+    label: str = "Case Severity",
     initial_option: str = None,
     project_id: int = None,
     **kwargs,
@@ -383,9 +431,9 @@ def case_severity_select(
 
 def case_type_select(
     db_session: SessionLocal,
-    action_id=DefaultActionIds.case_type_select,
-    block_id=DefaultBlockIds.case_type_select,
-    label="Case Type",
+    action_id: str = DefaultActionIds.case_type_select,
+    block_id: str = DefaultBlockIds.case_type_select,
+    label: str = "Case Type",
     initial_option: str = None,
     project_id: int = None,
     **kwargs,
@@ -398,6 +446,27 @@ def case_type_select(
     return static_select_block(
         placeholder="Select Type",
         options=types,
+        initial_option=initial_option,
+        action_id=action_id,
+        block_id=block_id,
+        label=label,
+        **kwargs,
+    )
+
+
+def participant_select(
+    participants: List[Participant],
+    action_id: str = DefaultActionIds.participant_select,
+    block_id: str = DefaultBlockIds.participant_select,
+    label: str = "Participant",
+    initial_option: Participant = None,
+    **kwargs,
+):
+    """Creates a static select of available participants."""
+    participants = [p.name for p in participants]
+    return static_select_block(
+        placeholder="Select Participant",
+        options=participants,
         initial_option=initial_option,
         action_id=action_id,
         block_id=block_id,

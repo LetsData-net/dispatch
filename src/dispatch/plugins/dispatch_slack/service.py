@@ -1,6 +1,9 @@
 import time
 import logging
 import functools
+import inspect
+from pydantic import BaseModel
+from pydantic.error_wrappers import ErrorWrapper, ValidationError
 
 import slack_sdk
 from slack_sdk.web.async_client import AsyncWebClient
@@ -9,9 +12,101 @@ from typing import Any, Dict, List, Optional
 
 from tenacity import TryAgain, retry, retry_if_exception_type, stop_after_attempt
 
+from dispatch.exceptions import NotFoundError
+from dispatch.database.core import SessionLocal, sessionmaker, engine
+from dispatch.conversation import service as conversation_service
+from dispatch.plugin import service as plugin_service
+from dispatch.plugin.models import Plugin
+from dispatch.organization import service as organization_service
 from .config import SlackConversationConfiguration
 
 log = logging.getLogger(__name__)
+
+
+def get_plugin_configuration_from_channel_id(db_session: SessionLocal, channel_id: str) -> Plugin:
+    """Fetches the currently slack plugin configuration for this incident channel."""
+    conversation = conversation_service.get_by_channel_id_ignoring_channel_type(
+        db_session, channel_id
+    )
+    if conversation:
+        plugin_instance = plugin_service.get_active_instance(
+            db_session=db_session,
+            plugin_type="conversation",
+            project_id=conversation.incident.project.id,
+        )
+        return plugin_instance.configuration
+
+
+# we need a way to determine which organization to use for a given
+# event, we use the unique channel id to determine which organization the
+# event belongs to.
+def get_organization_scope_from_channel_id(channel_id: str) -> SessionLocal:
+    """Iterate all organizations looking for a relevant channel_id."""
+    db_session = SessionLocal()
+    organization_slugs = [o.slug for o in organization_service.get_all(db_session=db_session)]
+    db_session.close()
+
+    for slug in organization_slugs:
+        schema_engine = engine.execution_options(
+            schema_translate_map={
+                None: f"dispatch_organization_{slug}",
+            }
+        )
+
+        scoped_db_session = sessionmaker(bind=schema_engine)()
+        conversation = conversation_service.get_by_channel_id_ignoring_channel_type(
+            db_session=scoped_db_session, channel_id=channel_id
+        )
+        if conversation:
+            return scoped_db_session
+
+        scoped_db_session.close()
+
+
+def get_organization_scope_from_slug(slug: str) -> SessionLocal:
+    """Iterate all organizations looking for a matching slug."""
+    db_session = SessionLocal()
+    organization = organization_service.get_by_slug(db_session=db_session, slug=slug)
+    db_session.close()
+
+    if organization:
+        schema_engine = engine.execution_options(
+            schema_translate_map={
+                None: f"dispatch_organization_{slug}",
+            }
+        )
+
+        return sessionmaker(bind=schema_engine)()
+
+    raise ValidationError(
+        [
+            ErrorWrapper(
+                NotFoundError(msg=f"Organization slug '{slug}' not found. Check your spelling."),
+                loc="organization",
+            )
+        ],
+        model=BaseModel,
+    )
+
+
+def get_default_organization_scope() -> str:
+    """Iterate all organizations looking for matching organization."""
+    db_session = SessionLocal()
+    organization = organization_service.get_default(db_session=db_session)
+    db_session.close()
+
+    schema_engine = engine.execution_options(
+        schema_translate_map={
+            None: f"dispatch_organization_{organization.slug}",
+        }
+    )
+
+    return sessionmaker(bind=schema_engine)()
+
+
+def fullname(o):
+    module = inspect.getmodule(o)
+    return f"{module.__name__}.{o.__qualname__}"
 
 
 def create_slack_client(config: SlackConversationConfiguration, run_async: bool = False):

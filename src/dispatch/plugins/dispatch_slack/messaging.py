@@ -6,6 +6,7 @@
 """
 import logging
 from typing import List, Optional
+from blockkit import Section
 from jinja2 import Template
 
 from dispatch.messaging.strings import (

@@ -12,13 +12,12 @@ from dispatch.feedback.enums import FeedbackRating
 from dispatch.feedback.models import FeedbackCreate
 from dispatch.feedback import service as feedback_service
 
-from dispatch.plugins.dispatch_slack.modals.common import parse_submitted_form
-
 from dispatch.plugins.dispatch_slack.fields import static_select_block
 from dispatch.plugins.dispatch_slack.bolt import (
     app,
     db_middleware,
     user_middleware,
+    modal_submit_middleware,
     action_context_middleware,
     button_context_middleware,
 )
@@ -136,18 +135,16 @@ async def provide_feedback_button_click(ack, body, client, respond, db_session, 
 
 @app.view(
     FeedbackNotificationActions.submit,
-    middleware=[action_context_middleware, db_middleware, user_middleware],
+    middleware=[action_context_middleware, db_middleware, user_middleware, modal_submit_middleware],
 )
-async def handle_feedback_submission_event(ack, body, context, db_session, user, client):
+async def handle_feedback_submission_event(ack, body, context, db_session, user, client, form_data):
     ack()
     incident = incident_service.get(
         db_session=db_session, incident_id=context["subject"].incident_id
     )
 
-    data = parse_submitted_form(body["view"])
-
-    feedback = data.get(FeedbackNotificationBlockIds.feedback_input)
-    rating = data.get(FeedbackNotificationBlockIds.rating_select, {}).get("value")
+    feedback = form_data.get(FeedbackNotificationBlockIds.feedback_input)
+    rating = form_data.get(FeedbackNotificationBlockIds.rating_select, {}).get("value")
 
     feedback_in = FeedbackCreate(
         rating=rating, feedback=feedback, project=incident.project, incident=incident
@@ -156,7 +153,7 @@ async def handle_feedback_submission_event(ack, body, context, db_session, user,
     incident.feedback.append(feedback)
 
     # we only really care if this exists, if it doesn't then flag is false
-    if not data.get(FeedbackNotificationBlockIds.anonymous_checkbox):
+    if not form_data.get(FeedbackNotificationBlockIds.anonymous_checkbox):
         participant = participant_service.get_by_incident_id_and_email(
             db_session=db_session, incident_id=context["subject"].incident_id, email=user.email
         )

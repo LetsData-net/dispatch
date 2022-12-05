@@ -1,7 +1,6 @@
 from blockkit import Context, Input, Section, MarkdownText, Modal, PlainTextInput
 
 from dispatch.config import DISPATCH_UI_URL
-from dispatch.case import service as case_service
 from dispatch.database.core import SessionLocal
 from dispatch.enums import DispatchEnum
 from dispatch.incident import service as incident_service
@@ -11,11 +10,11 @@ from dispatch.plugins.dispatch_slack.bolt import (
     action_context_middleware,
     app,
     command_context_middleware,
+    modal_submit_middleware,
     db_middleware,
     user_middleware,
 )
 from dispatch.plugins.dispatch_slack.fields import static_select_block
-from dispatch.plugins.dispatch_slack.modals.common import parse_submitted_form
 from dispatch.workflow import service as workflow_service
 from dispatch.workflow.flows import send_workflow_notification
 from dispatch.workflow.models import WorkflowInstanceCreate
@@ -174,23 +173,21 @@ async def handle_workflow_run_command(
 
 @app.view(
     RunWorkflowActions.submit,
-    middleware=[action_context_middleware, db_middleware, user_middleware],
+    middleware=[action_context_middleware, db_middleware, user_middleware, modal_submit_middleware],
 )
-async def handle_workflow_submission_event(ack, body, client, context, db_session, user):
+async def handle_workflow_submission_event(ack, body, client, context, db_session, form_data, user):
     """Handles workflow submission event."""
-    data = parse_submitted_form(body["view"])
-
     incident = incident_service.get(db_session=db_session, incident_id=context["subject"].id)
 
-    workflow_id = data.get(RunWorkflowBlockIds.workflow_select)["value"]
+    workflow_id = form_data.get(RunWorkflowBlockIds.workflow_select)["value"]
     workflow = workflow_service.get(db_session=db_session, workflow_id=workflow_id)
 
     params = {}
     named_params = []
-    for i in data.keys():
+    for i in form_data.keys():
         if i.startswith(RunWorkflowBlockIds.param_input):
             key = i.split("-")[1]
-            value = data[i]
+            value = form_data[i]
             params.update({key: value})
             named_params.append({"key": key, "value": value})
 
@@ -204,7 +201,7 @@ async def handle_workflow_submission_event(ack, body, client, context, db_sessio
             workflow=workflow,
             incident=incident,
             creator=creator,
-            run_reason=data[RunWorkflowBlockIds.reason_input],
+            run_reason=form_data[RunWorkflowBlockIds.reason_input],
             parameters=named_params,
         ),
     )
