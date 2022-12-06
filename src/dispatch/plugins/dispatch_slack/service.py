@@ -15,8 +15,6 @@ from tenacity import TryAgain, retry, retry_if_exception_type, stop_after_attemp
 from dispatch.exceptions import NotFoundError
 from dispatch.database.core import SessionLocal, sessionmaker, engine
 from dispatch.conversation import service as conversation_service
-from dispatch.plugin import service as plugin_service
-from dispatch.plugin.models import Plugin
 from dispatch.organization import service as organization_service
 from .config import SlackConversationConfiguration
 

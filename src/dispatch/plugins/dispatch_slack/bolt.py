@@ -20,14 +20,15 @@ logging.basicConfig(level=logging.DEBUG)
 
 @app.error
 async def errors(error, body, logger, respond):
-    if isinstance(error, BoltUnhandledRequestError):
-        # you may want to have some logging here
-        await respond("The command you have run is not current enabled.")
-        return BoltResponse(status=200, body="")
-    else:
-        # other error patterns
-        await respond(str(error))
-        return BoltResponse(status=200, body="")
+    logger.exception(error)
+    # if isinstance(error, BoltUnhandledRequestError):
+    #    # you may want to have some logging here
+    #    await respond("The command you have run is not current enabled.")
+    #    return BoltResponse(status=200, body="")
+    # else:
+    #    # other error patterns
+    #    await respond(str(error))
+    #    return BoltResponse(status=200, body="")
 
 
 async def to_bolt_request(
