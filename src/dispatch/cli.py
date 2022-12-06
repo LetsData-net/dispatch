@@ -731,12 +731,16 @@ def run_slack_websocket(organization: str, project: str):
     import asyncio
     from dispatch.project.models import ProjectRead
     from dispatch.project import service as project_service
-    from dispatch.plugins.dispatch_slack.decorators import get_organization_scope_from_slug
+    from dispatch.plugins.dispatch_slack.service import get_organization_scope_from_slug
     from dispatch.common.utils.cli import install_plugins
     from slack_bolt.adapter.socket_mode.async_handler import AsyncSocketModeHandler
 
     from dispatch.plugins.dispatch_slack.bolt import app
     from dispatch.plugins.dispatch_slack.case import interactive  # noqa
+    from dispatch.plugins.dispatch_slack.incident.interactive import (
+        configure as configure_incidents,
+    )
+    from dispatch.plugins.dispatch_slack.workflow import configure as configure_workflows
 
     install_plugins()
 
@@ -769,6 +773,9 @@ def run_slack_websocket(organization: str, project: str):
     session.close()
 
     click.secho("Slack websocket process started...", fg="blue")
+    configure_incidents(instance.configuration)
+    configure_workflows(instance.configuration)
+
     app._token = instance.configuration.api_bot_token.get_secret_value()
 
     async def main():

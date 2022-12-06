@@ -117,11 +117,11 @@ class IncidentUpdateActions(DispatchEnum):
 
 
 class IncidentUpdateActionIds(DispatchEnum):
-    pass
+    tags = "incident-update-tags"
 
 
 class IncidentUpdateBlockIds(DispatchEnum):
-    pass
+    tags = "incident-update-tags"
 
 
 class IncidentReportActions(DispatchEnum):
@@ -130,11 +130,11 @@ class IncidentReportActions(DispatchEnum):
 
 
 class IncidentReportActionIds(DispatchEnum):
-    pass
+    tags = "incident-report-tags"
 
 
 class IncidentReportBlockIds(DispatchEnum):
-    pass
+    tags = "incident-report-tags"
 
 
 class UpdateNotificationGroupActions(DispatchEnum):

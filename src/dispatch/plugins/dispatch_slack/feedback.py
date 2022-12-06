@@ -16,6 +16,7 @@ from dispatch.plugins.dispatch_slack.fields import static_select_block
 from dispatch.plugins.dispatch_slack.bolt import (
     app,
     db_middleware,
+    command_context_middleware,
     user_middleware,
     modal_submit_middleware,
     action_context_middleware,

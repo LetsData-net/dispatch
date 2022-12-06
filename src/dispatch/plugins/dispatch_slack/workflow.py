@@ -6,9 +6,9 @@ from dispatch.enums import DispatchEnum
 from dispatch.incident import service as incident_service
 from dispatch.messaging.strings import INCIDENT_WORKFLOW_CREATED_NOTIFICATION
 from dispatch.participant import service as participant_service
-from dispatch.plugins.dispatch_slack.bolt import (
+from dispatch.plugins.dispatch_slack.bolt import app
+from dispatch.plugins.dispatch_slack.middleware import (
     action_context_middleware,
-    app,
     command_context_middleware,
     modal_submit_middleware,
     db_middleware,
@@ -18,8 +18,6 @@ from dispatch.plugins.dispatch_slack.fields import static_select_block
 from dispatch.workflow import service as workflow_service
 from dispatch.workflow.flows import send_workflow_notification
 from dispatch.workflow.models import WorkflowInstanceCreate
-
-from .config import SlackConversationConfiguration
 
 
 class RunWorkflowBlockIds(DispatchEnum):
@@ -36,6 +34,18 @@ class RunWorkflowActionIds(DispatchEnum):
 
 class RunWorkflowActions(DispatchEnum):
     submit = "run-workflow-submit"
+    workflow_select = "run-workflow-workflow-select"
+
+
+def configure(config):
+    """Maps commands/events to their functions."""
+    middleware = [command_context_middleware, db_middleware]
+    app.command(config.slack_command_list_workflows, middleware=middleware)(
+        handle_workflow_list_command
+    )
+    app.command(config.slack_command_run_workflow, middleware=middleware)(
+        handle_workflow_run_command
+    )
 
 
 def workflow_select(
@@ -100,10 +110,6 @@ def param_input(
     return inputs
 
 
-@app.command(
-    SlackConversationConfiguration.slack_command_list_workflows,
-    middleware=[command_context_middleware, db_middleware],
-)
 async def handle_workflow_list_command(ack, body, respond, client, context, db_session):
     """Handles the workflow list command."""
     incident = incident_service.get(db_session=db_session, incident_id=context["subject"].id)
@@ -131,11 +137,6 @@ async def handle_workflow_list_command(ack, body, respond, client, context, db_s
     respond(blocks=blocks, response_type="ephemeral")
 
 
-# TODO getting command strings from config won't work dynamically, maybe custom listener middleware?
-@app.command(
-    SlackConversationConfiguration.slack_command_run_workflow,
-    middleware=[command_context_middleware, db_middleware],
-)
 async def handle_workflow_run_command(
     ack,
     body,
@@ -219,7 +220,7 @@ async def handle_workflow_submission_event(ack, body, client, context, db_sessio
 
     workflow.plugin_instance.instance.run(workflow.resource_id, params)
 
-    # TODO we should move off these types of notification functions
+    # TODO we should move off these types of notification functions and create them directly
     send_workflow_notification(
         incident.project.id,
         incident.conversation.channel_id,

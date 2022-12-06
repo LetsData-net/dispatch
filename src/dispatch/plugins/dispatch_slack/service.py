@@ -23,20 +23,6 @@ from .config import SlackConversationConfiguration
 log = logging.getLogger(__name__)
 
 
-def get_plugin_configuration_from_channel_id(db_session: SessionLocal, channel_id: str) -> Plugin:
-    """Fetches the currently slack plugin configuration for this incident channel."""
-    conversation = conversation_service.get_by_channel_id_ignoring_channel_type(
-        db_session, channel_id
-    )
-    if conversation:
-        plugin_instance = plugin_service.get_active_instance(
-            db_session=db_session,
-            plugin_type="conversation",
-            project_id=conversation.incident.project.id,
-        )
-        return plugin_instance.configuration
-
-
 # we need a way to determine which organization to use for a given
 # event, we use the unique channel id to determine which organization the
 # event belongs to.
@@ -308,49 +294,12 @@ def get_user_avatar_url(client: Any, email: str):
     return get_user_info_by_email(client, email)["profile"]["image_512"]
 
 
-# @functools.lru_cache()
-async def get_conversations_by_user_id_async(client: Any, user_id: str):
-    """Gets the list of public and private conversations a user is a member of."""
-    result = await make_call_async(
-        client,
-        "users.conversations",
-        user=user_id,
-        types="public_channel",
-        exclude_archived="true",
-    )
-    public_conversations = [c["name"] for c in result["channels"]]
-
-    result = await make_call_async(
-        client,
-        "users.conversations",
-        user=user_id,
-        types="private_channel",
-        exclude_archived="true",
-    )
-    private_conversations = [c["name"] for c in result["channels"]]
-
-    return public_conversations, private_conversations
-
-
 # note this will get slower over time, we might exclude archived to make it sane
 def get_conversation_by_name(client: Any, name: str):
     """Fetches a conversation by name."""
     for c in list_conversations(client):
         if c["name"] == name:
             return c
-
-
-async def get_conversation_name_by_id_async(client: Any, conversation_id: str):
-    """Fetches a conversation by id and returns its name."""
-    try:
-        return (await make_call_async(client, "conversations.info", channel=conversation_id))[
-            "channel"
-        ]["name"]
-    except slack_sdk.errors.SlackApiError as e:
-        if e.response["error"] == "channel_not_found":
-            return None
-        else:
-            raise e
 
 
 def set_conversation_topic(client: Any, conversation_id: str, topic: str):
@@ -487,24 +436,3 @@ def message_filter(message):
         return
 
     return message
-
-
-def is_user(config: SlackConversationConfiguration, user_id: str):
-    """Returns true if it's a regular user, false if Dispatch or Slackbot bot'."""
-    return user_id != config.app_user_slug and user_id != "USLACKBOT"
-
-
-def open_dialog_with_user(client: Any, trigger_id: str, dialog: dict):
-    """Opens a dialog with a user."""
-    return make_call(client, "dialog.open", trigger_id=trigger_id, dialog=dialog)
-
-
-def open_modal_with_user(client: Any, trigger_id: str, modal: dict):
-    """Opens a modal with a user."""
-    # the argument should be view in the make call, since slack api expects view
-    return make_call(client, "views.open", trigger_id=trigger_id, view=modal)
-
-
-def update_modal_with_user(client: Any, trigger_id: str, view_id: str, modal: dict):
-    """Updates a modal with a user."""
-    return make_call(client, "views.update", trigger_id=trigger_id, view_id=view_id, view=modal)

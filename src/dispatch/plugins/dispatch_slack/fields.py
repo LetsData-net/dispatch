@@ -1,5 +1,13 @@
 from typing import List
-from blockkit import PlainTextInput, StaticSelect, PlainOption, Input, DatePicker, Section
+from blockkit import (
+    PlainTextInput,
+    StaticSelect,
+    PlainOption,
+    Input,
+    DatePicker,
+    Section,
+    MultiExternalSelect,
+)
 
 from dispatch.enums import DispatchEnum
 from dispatch.database.core import SessionLocal
@@ -24,6 +32,7 @@ class DefaultBlockIds(DispatchEnum):
     date_picker_input = "date-picker-input"
     minute_picker_input = "minute-picker-input"
     hour_picker_input = "hour-picker-input"
+    timezone_picker_input = "timezone-picker-input"
 
     # incidents
     incident_priority_select = "incident-priority-select"
@@ -36,6 +45,9 @@ class DefaultBlockIds(DispatchEnum):
     case_status_select = "case-status-select"
     case_severity_select = "case-severity-select"
     case_type_select = "case-type-select"
+
+    participant_select = "participant-select"
+    tags_multi_select = "tag-multi-select"
 
 
 class DefaultActionIds(DispatchEnum):
@@ -47,6 +59,7 @@ class DefaultActionIds(DispatchEnum):
     date_picker_input = "date-picker-input"
     minute_picker_input = "minute-picker-input"
     hour_picker_input = "hour-picker-input"
+    timezone_picker_input = "timezone-picker-input"
 
     # incidents
     incident_priority_select = "incident-priority-select"
@@ -59,6 +72,9 @@ class DefaultActionIds(DispatchEnum):
     case_status_select = "case-status-select"
     case_severity_select = "case-severity-select"
     case_type_select = "case-type-select"
+
+    participant_select = "participant-select"
+    tags_multi_select = "tag-multi-select"
 
 
 def date_picker_input(
@@ -356,6 +372,23 @@ def incident_type_select(
         block_id=block_id,
         label=label,
         **kwargs,
+    )
+
+
+def tag_multi_select(
+    action_id: str = DefaultActionIds.tags_multi_select,
+    block_id: str = DefaultBlockIds.tags_multi_select,
+    label="Tags",
+    initial_options: str = None,
+    **kwargs,
+):
+    """Creates an incident tag select."""
+    return Input(
+        element=MultiExternalSelect(
+            placeholder="Select Tag(s)", action_id=action_id, initial_options=initial_options
+        ),
+        block_id=block_id,
+        label=label,
     )
 
 
