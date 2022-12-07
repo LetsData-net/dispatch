@@ -1,4 +1,4 @@
-from blockkit import Context, Input, Section, MarkdownText, Modal, PlainTextInput
+from blockkit import Context, Input, Section, MarkdownText, Modal, PlainTextInput, Message
 
 from dispatch.config import DISPATCH_UI_URL
 from dispatch.database.core import SessionLocal
@@ -27,7 +27,7 @@ class RunWorkflowBlockIds(DispatchEnum):
 
 
 class RunWorkflowActionIds(DispatchEnum):
-    workflow_select = "run-workflow-select"
+    workflow_select = "run-workflow-workflow-select"
     reason_input = "run-workflow-reason-input"
     param_input = "run-workflow-param-input"
 
@@ -93,17 +93,21 @@ def reason_input(
 def param_input(
     action_id: str = RunWorkflowActionIds.param_input,
     block_id: str = RunWorkflowBlockIds.param_input,
-    initial_values: list = None,
+    initial_options: list = None,
     label: str = "Workflow Parameters",
     **kwargs,
 ):
     inputs = []
-    for p in initial_values:
+    for p in initial_options:
         inputs.append(
             Input(
-                block_id=f"{block_id}-{p.name}",
-                element=PlainTextInput(action_id=f"{action_id}-{p.name}"),
-                label=label,
+                block_id=f"{block_id}-{p['key']}",
+                element=PlainTextInput(
+                    placeholder="Parameter Value",
+                    action_id=f"{action_id}-{p['key']}",
+                    initial_value=p["value"],
+                ),
+                label=p["key"],
                 **kwargs,
             )
         )
@@ -134,7 +138,8 @@ async def handle_workflow_list_command(ack, body, respond, client, context, db_s
             )
         )
 
-    respond(blocks=blocks, response_type="ephemeral")
+    blocks = Message(blocks=blocks).build()["blocks"]
+    await respond(blocks=blocks, response_type="ephemeral")
 
 
 async def handle_workflow_run_command(
@@ -146,13 +151,13 @@ async def handle_workflow_run_command(
 ):
     """Handles the workflow run command."""
     await ack()
-    incident = incident_service.get(
-        db_session=db_session, incident_id=context["subject"].incident_id
-    )
+    incident = incident_service.get(db_session=db_session, incident_id=context["subject"].id)
 
     blocks = [
         Context(elements=[MarkdownText(text="Select a workflow to run.")]),
-        workflow_select(db_session=db_session, project_id=incident.project.id),
+        workflow_select(
+            db_session=db_session, dispatch_action=True, project_id=incident.project.id
+        ),
     ]
 
     modal = Modal(
@@ -164,12 +169,7 @@ async def handle_workflow_run_command(
         private_metadata=context["subject"].json(),
     ).build()
 
-    await client.views_open(
-        view_id=body["view"]["id"],
-        hash=body["view"]["hash"],
-        trigger_id=body["trigger_id"],
-        view=modal,
-    )
+    await client.views_open(view=modal, trigger_id=body["trigger_id"])
 
 
 @app.view(
@@ -239,25 +239,29 @@ async def handle_run_workflow_select_action(ack, body, db_session, context, clie
     """Handles workflow select event."""
     await ack()
     values = body["view"]["state"]["values"]
-    selected_workflow_id = values[RunWorkflowBlockIds.workflow_select][
+    selected_workflow_name = values[RunWorkflowBlockIds.workflow_select][
         RunWorkflowActionIds.workflow_select
     ]["selected_option"]["value"]
 
-    incident = incident_service.get(
-        db_session=db_session, incident_id=context["subject"].incident_id
-    )
+    incident = incident_service.get(db_session=db_session, incident_id=context["subject"].id)
 
-    selected_workflow = workflow_service.get(
-        db_session=db_middleware, workflow_id=selected_workflow_id
+    selected_workflow = workflow_service.get_by_name(
+        db_session=db_session, name=selected_workflow_name
     )
     blocks = [
         Context(elements=[MarkdownText(text="Select a workflow to run.")]),
         workflow_select(
-            initial_option=selected_workflow, db_session=db_session, project_id=incident.project.id
+            initial_option=selected_workflow.name,
+            db_session=db_session,
+            dispatch_action=True,
+            project_id=incident.project.id,
         ),
         reason_input(),
-        param_input(initial_options=selected_workflow.parameters),
     ]
+
+    blocks.extend(
+        param_input(initial_options=selected_workflow.parameters),
+    )
 
     modal = Modal(
         title="Run Workflow",

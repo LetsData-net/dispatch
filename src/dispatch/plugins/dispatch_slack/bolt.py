@@ -4,7 +4,6 @@ from typing import Dict, Any, Optional
 from slack_bolt.app.async_app import AsyncApp
 from slack_bolt.response import BoltResponse
 from slack_bolt.request import BoltRequest
-from slack_bolt.error import BoltUnhandledRequestError
 
 
 from fastapi import APIRouter
@@ -12,7 +11,7 @@ from fastapi import APIRouter
 from starlette.requests import Request
 from starlette.responses import Response
 
-app = AsyncApp(token="foo", raise_error_for_unhandled_request=True)
+app = AsyncApp(token="xoxb-valid", raise_error_for_unhandled_request=True)
 router = APIRouter()
 
 logging.basicConfig(level=logging.DEBUG)
@@ -20,14 +19,12 @@ logging.basicConfig(level=logging.DEBUG)
 
 @app.error
 async def errors(error, body, context, logger, respond):
-    # logger.debug(error)
-    if isinstance(error, BoltUnhandledRequestError):
-        # you may want to have some logging here
-        pass
-    # else:
-    #    # other error patterns
-    #    await respond(str(error))
-    #    return BoltResponse(status=200, body="")
+    from pprint import pprint
+
+    pprint(body)
+    logger.exception(error)
+    logger.debug(error)
+    return BoltResponse(status=200, body="")
 
 
 async def to_bolt_request(

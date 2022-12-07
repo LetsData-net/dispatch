@@ -77,6 +77,11 @@ class DefaultActionIds(DispatchEnum):
     tags_multi_select = "tag-multi-select"
 
 
+class TimezoneOptions(DispatchEnum):
+    local = "Local Time (based on your slack profile)"
+    utc = "Coordinated Universal Time (UTC)"
+
+
 def date_picker_input(
     action_id: str = DefaultActionIds.date_picker_input,
     block_id: str = DefaultBlockIds.date_picker_input,
@@ -99,7 +104,7 @@ def hour_picker_input(
     action_id: str = DefaultActionIds.hour_picker_input,
     block_id: str = DefaultBlockIds.hour_picker_input,
     initial_option: str = None,
-    label: str = "hour",
+    label: str = "Hour",
     **kwargs,
 ):
     """Builds a hour picker input."""
@@ -109,6 +114,7 @@ def hour_picker_input(
         block_id=block_id,
         initial_option=initial_option,
         options=hours,
+        label=label,
         placeholder="Hour",
     )
 
@@ -127,6 +133,7 @@ def minute_picker_input(
         block_id=block_id,
         initial_option=initial_option,
         options=minutes,
+        label=label,
         placeholder="Minute",
     )
 
@@ -134,17 +141,17 @@ def minute_picker_input(
 def timezone_picker_input(
     action_id: str = DefaultActionIds.timezone_picker_input,
     block_id: str = DefaultBlockIds.timezone_picker_input,
-    initial_option: str = "Local time from Slack profile",
+    initial_option: str = TimezoneOptions.local.value,
     label: str = "Timezone",
     **kwargs,
 ):
     """Builds a timezone picker input."""
-    timezones = ["Local time form Slack profile", "Coordinated Universal Time (UTC)"]
     return static_select_block(
         action_id=action_id,
         block_id=block_id,
         initial_option=initial_option,
-        options=timezones,
+        options=[tz.value for tz in TimezoneOptions],
+        label=label,
         placeholder="Timezone",
     )
 
@@ -157,15 +164,12 @@ def datetime_picker_block(
     **kwargs,
 ):
     """Builds a datetime picker block"""
-    return Section(
-        block_id=block_id,
-        fields=[
-            date_picker_input(),
-            hour_picker_input(),
-            minute_picker_input(),
-            timezone_picker_input(),
-        ],
-    )
+    return [
+        date_picker_input(),
+        hour_picker_input(),
+        minute_picker_input(),
+        timezone_picker_input(),
+    ]
 
 
 def static_select_block(
@@ -496,7 +500,7 @@ def participant_select(
     **kwargs,
 ):
     """Creates a static select of available participants."""
-    participants = [p.name for p in participants]
+    participants = [p.individual.name for p in participants]
     return static_select_block(
         placeholder="Select Participant",
         options=participants,

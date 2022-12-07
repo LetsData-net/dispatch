@@ -5,6 +5,7 @@ from dispatch.auth import service as user_service
 from dispatch.auth.models import DispatchUser
 
 from .models import SubjectMetadata
+from .config import SlackConversationConfiguration
 
 
 async def shortcut_context_middleware(body, context, next):
@@ -84,7 +85,7 @@ async def modal_submit_middleware(body, context, next):
 
 # TODO determine how we an get the current slack config
 async def configuration_context_middleware(context, db_session, next):
-    context["config"] = ""
+    context["config"] = {}  # SlackConversationConfiguration()
     await next()
 
 

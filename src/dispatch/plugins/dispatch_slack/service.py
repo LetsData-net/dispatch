@@ -261,11 +261,24 @@ def get_user_info_by_email(client: Any, email: str):
     return make_call(client, "users.lookupByEmail", email=email)["user"]
 
 
+async def get_user_info_by_email_async(client: Any, email: str):
+    """Gets profile information about a user by email."""
+    return (await make_call_async(client, "users.lookupByEmail", email=email))["user"]
+
+
 @functools.lru_cache()
 def get_user_profile_by_email(client: Any, email: str):
     """Gets extended profile information about a user by email."""
     user = make_call(client, "users.lookupByEmail", email=email)["user"]
     profile = make_call(client, "users.profile.get", user=user["id"])["profile"]
+    profile["tz"] = user["tz"]
+    return profile
+
+
+async def get_user_profile_by_email_async(client: Any, email: str):
+    """Gets extended profile information about a user by email."""
+    user = (await make_call(client, "users.lookupByEmail", email=email))["user"]
+    profile = (await make_call(client, "users.profile.get", user=user["id"]))["profile"]
     profile["tz"] = user["tz"]
     return profile
 
@@ -290,6 +303,11 @@ def get_user_username(client: Any, user_id: str):
 def get_user_avatar_url(client: Any, email: str):
     """Gets the user's avatar url."""
     return get_user_info_by_email(client, email)["profile"]["image_512"]
+
+
+async def get_user_avatar_url_async(client: Any, email: str):
+    """Gets the user's avatar url."""
+    return (await get_user_info_by_email_async(client, email))["profile"]["image_512"]
 
 
 # note this will get slower over time, we might exclude archived to make it sane

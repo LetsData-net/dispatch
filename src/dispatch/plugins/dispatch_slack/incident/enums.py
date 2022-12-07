@@ -75,7 +75,8 @@ class EngageOncallActions(DispatchEnum):
 
 
 class EngageOncallActionIds(DispatchEnum):
-    pass
+    service = "engage-oncall-service"
+    page = "engage-oncall-page"
 
 
 class EngageOncallBlockIds(DispatchEnum):
@@ -130,11 +131,11 @@ class IncidentReportActions(DispatchEnum):
 
 
 class IncidentReportActionIds(DispatchEnum):
-    tags = "incident-report-tags"
+    tags_multi_select = "incident-report-tags-multi-select"
 
 
 class IncidentReportBlockIds(DispatchEnum):
-    tags = "incident-report-tags"
+    tags_multi_select = "incident-report-tags-multi-select"
 
 
 class UpdateNotificationGroupActions(DispatchEnum):
