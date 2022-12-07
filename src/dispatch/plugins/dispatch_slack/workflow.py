@@ -145,7 +145,7 @@ async def handle_workflow_run_command(
     db_session,
 ):
     """Handles the workflow run command."""
-    ack()
+    await ack()
     incident = incident_service.get(
         db_session=db_session, incident_id=context["subject"].incident_id
     )
@@ -237,7 +237,7 @@ async def handle_workflow_submission_event(ack, body, client, context, db_sessio
 )
 async def handle_run_workflow_select_action(ack, body, db_session, context, client):
     """Handles workflow select event."""
-    ack()
+    await ack()
     values = body["view"]["state"]["values"]
     selected_workflow_id = values[RunWorkflowBlockIds.workflow_select][
         RunWorkflowActionIds.workflow_select

@@ -6,7 +6,6 @@
 """
 import logging
 from typing import List, Optional
-from blockkit import Section
 from jinja2 import Template
 
 from dispatch.messaging.strings import (
@@ -152,45 +151,6 @@ def create_command_run_in_conversation_where_bot_not_present_message(
             INCIDENT_CONVERSATION_COMMAND_RUN_IN_CONVERSATION_WHERE_BOT_NOT_PRESENT
         ).render(command=command, conversations=conversations),
     }
-
-
-def create_incident_reported_confirmation_message(
-    title: str, description: str, incident_type: str, incident_severity: str, incident_priority: str
-):
-    """Creates an incident reported confirmation message."""
-    return [
-        {
-            "type": "header",
-            "text": {
-                "type": "plain_text",
-                "text": "Security Incident Reported",
-            },
-        },
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": "This is a confirmation that you have reported a security incident with the following information. You'll get invited to a Slack conversation soon.",
-            },
-        },
-        {"type": "section", "text": {"type": "mrkdwn", "text": f"*Incident Title*: {title}"}},
-        {
-            "type": "section",
-            "text": {"type": "mrkdwn", "text": f"*Incident Description*: {description}"},
-        },
-        {
-            "type": "section",
-            "text": {"type": "mrkdwn", "text": f"*Incident Type*: {incident_type}"},
-        },
-        {
-            "type": "section",
-            "text": {"type": "mrkdwn", "text": f"*Incident Severity*: {incident_severity}"},
-        },
-        {
-            "type": "section",
-            "text": {"type": "mrkdwn", "text": f"*Incident Priority*: {incident_priority}"},
-        },
-    ]
 
 
 def get_template(message_type: MessageType):

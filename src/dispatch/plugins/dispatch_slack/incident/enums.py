@@ -117,11 +117,11 @@ class IncidentUpdateActions(DispatchEnum):
 
 
 class IncidentUpdateActionIds(DispatchEnum):
-    tags = "incident-update-tags"
+    tags_multi_select = "incident-update-tags-multi-select"
 
 
 class IncidentUpdateBlockIds(DispatchEnum):
-    tags = "incident-update-tags"
+    tags_multi_select = "incident-update-tags-multi-select"
 
 
 class IncidentReportActions(DispatchEnum):

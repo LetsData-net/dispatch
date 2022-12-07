@@ -311,7 +311,7 @@ def incident_status_select(
     **kwargs,
 ):
     """Creates an incident status select."""
-    statuses = [s.name for s in IncidentStatus]
+    statuses = [s.value for s in IncidentStatus]
     return static_select_block(
         placeholder="Select Status",
         options=statuses,
@@ -420,12 +420,12 @@ def case_priority_select(
 def case_status_select(
     action_id: str = DefaultActionIds.case_status_select,
     block_id: str = DefaultBlockIds.case_status_select,
-    label: str = "Case Status",
+    label: str = "Status",
     initial_option: str = None,
     **kwargs,
 ):
     """Creates a case status select."""
-    statuses = [s.name for s in CaseStatus]
+    statuses = [str(s) for s in CaseStatus]
     return static_select_block(
         placeholder="Select Status",
         options=statuses,

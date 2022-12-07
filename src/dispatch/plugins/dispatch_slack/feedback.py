@@ -100,7 +100,7 @@ def anonymous_checkbox(
     FeedbackNotificationActions.provide, middleware=[button_context_middleware, db_middleware]
 )
 async def provide_feedback_button_click(ack, body, client, respond, db_session, context):
-    ack()
+    await ack()
     incident = incident_service.get(
         db_session=db_session, incident_id=context["subject"].incident_id
     )
@@ -138,7 +138,7 @@ async def provide_feedback_button_click(ack, body, client, respond, db_session, 
     middleware=[action_context_middleware, db_middleware, user_middleware, modal_submit_middleware],
 )
 async def handle_feedback_submission_event(ack, body, context, db_session, user, client, form_data):
-    ack()
+    await ack()
     incident = incident_service.get(
         db_session=db_session, incident_id=context["subject"].incident_id
     )
