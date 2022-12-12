@@ -151,6 +151,9 @@ def configure(config):
     app.command(config.slack_command_report_incident, middleware=middleware)(
         handle_report_incident_command
     )
+    app.command(config.slack_command_list_resources, middleware=middleware)(
+        handle_list_resources_command
+    )
     app.command(config.slack_command_update_incident, middleware=middleware)(
         handle_update_incident_command
     )
@@ -441,6 +444,9 @@ async def handle_list_tasks_command(ack, user, body, respond, context, db_sessio
         if caller_only:
             tasks = filter_tasks_by_assignee_and_creator(tasks, user.email, user.email)
 
+        if not tasks:
+            blocks.append(Section(text="No tasks."))
+
         for idx, task in enumerate(tasks):
             assignees = [f"<{a.individual.weblink}|{a.individual.name}>" for a in task.assignees]
 
@@ -573,7 +579,7 @@ async def handle_timeline_added_event(ack, body, client, context, db_session):
 
 
 @app.event(
-    {"type": "message"}, middleware=[message_context_middleware, user_middleware, db_middleware]
+    {"type": "message"}, middleware=[message_context_middleware, db_middleware, user_middleware]
 )
 async def handle_participant_role_activity(ack, db_session, context, user):
     """Increments the participant role's activity counter."""
@@ -694,8 +700,8 @@ async def handle_member_left_channel(ack, context, db_session, user):
 )
 async def handle_thread_creation(ack, respond, client, context):
     """Sends the user an ephemeral message if they use threads."""
-    if not context["config"].ban_threads:
-        return
+    # if not context["config"].ban_threads:
+    #    return
 
     message = "Please refrain from using threads in incident related channels. Threads make it harder for incident participants to maintain context."
     await respond(text=message, response_type="ephemeral")
@@ -857,9 +863,12 @@ async def handle_add_timeline_submission_event(ack, user, client, context, db_se
         individual_id=participant.individual.id,
     )
 
+    blocks = [Section(text="Success!")]
+
     modal = Modal(
         title="Timeline Event Added",
         close="Close",
+        blocks=blocks,
         private_metadata=context["subject"].json(),
     ).build()
 
@@ -1340,7 +1349,7 @@ async def handle_update_incident_command(ack, body, client, context, db_session)
             project_id=incident.project.id,
         ),
         tag_multi_select(
-            initial_options=[t.name for t in incident.tags],
+            initial_options=[{"text": t.name, "value": t.name} for t in incident.tags],
         ),
     ]
 
@@ -1397,11 +1406,9 @@ async def handle_update_incident_submission_event(
     )
 
     modal = Modal(
-        title="Incident Updated",
+        title="Incident Update",
         close="Close",
-        blocks=[
-            Context(elements=[MarkdownText(text="The incident has been sucessfully updated.")])
-        ],
+        blocks=[Section(text="The incident is being updated...")],
     ).build()
 
     await client.views_update(
@@ -1413,6 +1420,7 @@ async def handle_update_incident_submission_event(
 
     commander_email = updated_incident.commander.individual.email
     reporter_email = updated_incident.reporter.individual.email
+
     incident_flows.incident_update_flow(
         user.email,
         commander_email,
@@ -1420,6 +1428,19 @@ async def handle_update_incident_submission_event(
         context["subject"].id,
         previous_incident,
         db_session=db_session,
+    )
+
+    modal = Modal(
+        title="Incident Update",
+        close="Close",
+        blocks=[Section(text="The incident has been successfully updated!")],
+    ).build()
+
+    await client.views_update(
+        view_id=body["view"]["id"],
+        hash=body["view"]["hash"],
+        trigger_id=body["trigger_id"],
+        view=modal,
     )
 
 

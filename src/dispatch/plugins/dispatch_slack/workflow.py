@@ -180,8 +180,8 @@ async def handle_workflow_submission_event(ack, body, client, context, db_sessio
     """Handles workflow submission event."""
     incident = incident_service.get(db_session=db_session, incident_id=context["subject"].id)
 
-    workflow_id = form_data.get(RunWorkflowBlockIds.workflow_select)["value"]
-    workflow = workflow_service.get(db_session=db_session, workflow_id=workflow_id)
+    workflow_name = form_data.get(RunWorkflowBlockIds.workflow_select)["value"]
+    workflow = workflow_service.get_by_name(db_session=db_session, name=workflow_name)
 
     params = {}
     named_params = []

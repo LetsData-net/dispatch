@@ -1,11 +1,43 @@
-from dispatch.database.core import engine, sessionmaker, SessionLocal
-from dispatch.organization import service as organization_service
-from dispatch.conversation import service as conversation_service
+from typing import Optional
+
+from sqlalchemy.orm.session import Session
+
 from dispatch.auth import service as user_service
 from dispatch.auth.models import DispatchUser
+from dispatch.conversation import service as conversation_service
+from dispatch.conversation.models import Conversation
+from dispatch.database.core import SessionLocal, engine, sessionmaker
+from dispatch.organization import service as organization_service
 
 from .models import SubjectMetadata
-from .config import SlackConversationConfiguration
+
+
+def resolve_conversation_from_context(
+    channel_id: str, message_ts: str = None
+) -> Optional[Conversation]:
+    """Attempts to resolve a conversation based on the channel id or message_ts."""
+    db_session = SessionLocal()
+    organization_slugs = [o.slug for o in organization_service.get_all(db_session=db_session)]
+    db_session.close()
+
+    conversation = None
+    for slug in organization_slugs:
+        schema_engine = engine.execution_options(
+            schema_translate_map={
+                None: f"dispatch_organization_{slug}",
+            }
+        )
+
+        # we close this later
+        scoped_db_session = sessionmaker(bind=schema_engine)()
+        conversation = conversation_service.get_by_channel_id_ignoring_channel_type(
+            db_session=scoped_db_session, channel_id=channel_id
+        )
+
+        if conversation:
+            break
+
+    return conversation
 
 
 async def shortcut_context_middleware(body, context, next):
@@ -26,15 +58,39 @@ async def action_context_middleware(body, context, next):
     await next()
 
 
-async def message_context_middleware(body, context, next):
+async def message_context_middleware(context, next):
     """Attemps to determine the current context of the event."""
-    context.update({"subject": SubjectMetadata(**body["message"]["metadata"]["event_payload"])})
+    conversation = resolve_conversation_from_context(context["channel_id"])
+    if conversation:
+        context.update(
+            {
+                "subject": SubjectMetadata(
+                    type="incident",
+                    id=conversation.incident.id,
+                    organization_slug=conversation.incident.project.organization.slug,
+                    project_id=conversation.incident.project.id,
+                ),
+                "db_session": Session.object_session(conversation),
+            }
+        )
+    else:
+        raise Exception("Unable to determine context.")
+
     await next()
 
 
-async def user_middleware(body, db_session, client, context, next):
+async def user_middleware(body, payload, db_session, client, context, next):
     """Attempts to determine the user making the request."""
-    email = (await client.users_info(user=body["user"]["id"]))["user"]["profile"]["email"]
+
+    # for modals
+    if body.get("user"):
+        user_id = body["user"]["id"]
+
+    # for messages and commands
+    if payload.get("user"):
+        user_id = payload["user"]
+
+    email = (await client.users_info(user=user_id))["user"]["profile"]["email"]
     context["user"] = user_service.get_or_create(
         db_session=db_session,
         organization=context["subject"].organization_slug,
@@ -90,44 +146,28 @@ async def configuration_context_middleware(context, db_session, next):
 
 
 async def command_context_middleware(context, next):
-    db_session = SessionLocal()
-    organization_slugs = [o.slug for o in organization_service.get_all(db_session=db_session)]
-    db_session.close()
-
-    conversation = None
-    for slug in organization_slugs:
-        schema_engine = engine.execution_options(
-            schema_translate_map={
-                None: f"dispatch_organization_{slug}",
+    conversation = resolve_conversation_from_context(channel_id=context["channel_id"])
+    if conversation:
+        context.update(
+            {
+                "subject": SubjectMetadata(
+                    type="incident",
+                    id=conversation.incident.id,
+                    organization_slug=conversation.incident.project.organization.slug,
+                    project_id=conversation.incident.project.id,
+                )
             }
         )
-
-        scoped_db_session = sessionmaker(bind=schema_engine)()
-        conversation = conversation_service.get_by_channel_id_ignoring_channel_type(
-            db_session=scoped_db_session, channel_id=context["channel_id"]
-        )
-        if conversation:
-            context.update(
-                {
-                    "subject": SubjectMetadata(
-                        type="incident",
-                        id=conversation.incident.id,
-                        organization_slug=conversation.incident.project.organization.slug,
-                        project_id=conversation.incident.project.id,
-                    )
-                }
-            )
-            scoped_db_session.close()
-            break
     else:
-        raise Exception(
-            "Unable to determine command context. Please ensure you are running command from an incident channel."
-        )
+        raise Exception("Unable to determine context.")
 
     await next()
 
 
 async def db_middleware(context, next):
+    if context.get("db_session"):
+        return await next()
+
     if not context.get("subject"):
         db_session = SessionLocal()
         slug = organization_service.get_default(db_session=db_session).slug

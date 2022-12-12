@@ -5,7 +5,6 @@ from blockkit import (
     PlainOption,
     Input,
     DatePicker,
-    Section,
     MultiExternalSelect,
 )
 

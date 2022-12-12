@@ -1,4 +1,5 @@
 import logging
+
 from typing import Dict, Any, Optional
 
 from slack_bolt.app.async_app import AsyncApp
@@ -11,20 +12,20 @@ from fastapi import APIRouter
 from starlette.requests import Request
 from starlette.responses import Response
 
+from .listeners import MultiMessageListener
+
 app = AsyncApp(token="xoxb-valid", raise_error_for_unhandled_request=True)
 router = APIRouter()
+
+app.use(MultiMessageListener)
 
 logging.basicConfig(level=logging.DEBUG)
 
 
 @app.error
 async def errors(error, body, context, logger, respond):
-    from pprint import pprint
-
-    pprint(body)
     logger.exception(error)
     logger.debug(error)
-    return BoltResponse(status=200, body="")
 
 
 async def to_bolt_request(
