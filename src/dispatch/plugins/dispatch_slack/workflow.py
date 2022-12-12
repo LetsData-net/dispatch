@@ -53,7 +53,7 @@ def workflow_select(
     project_id: int,
     action_id: str = RunWorkflowActionIds.workflow_select,
     block_id: str = RunWorkflowBlockIds.workflow_select,
-    initial_option: str = None,
+    initial_option: dict = None,
     label: str = "Workflow",
     **kwargs,
 ):
@@ -64,7 +64,7 @@ def workflow_select(
         block_id=block_id,
         initial_option=initial_option,
         label=label,
-        options=[w.name for w in workflows],
+        options=[{"text": w.name, "value": w.id} for w in workflows],
         placeholder="Select Workflow",
         **kwargs,
     )
@@ -180,8 +180,8 @@ async def handle_workflow_submission_event(ack, body, client, context, db_sessio
     """Handles workflow submission event."""
     incident = incident_service.get(db_session=db_session, incident_id=context["subject"].id)
 
-    workflow_name = form_data.get(RunWorkflowBlockIds.workflow_select)["value"]
-    workflow = workflow_service.get_by_name(db_session=db_session, name=workflow_name)
+    workflow_id = form_data.get(RunWorkflowBlockIds.workflow_select)["value"]
+    workflow = workflow_service.get(db_session=db_session, workflow_id=workflow_id)
 
     params = {}
     named_params = []
@@ -239,19 +239,17 @@ async def handle_run_workflow_select_action(ack, body, db_session, context, clie
     """Handles workflow select event."""
     await ack()
     values = body["view"]["state"]["values"]
-    selected_workflow_name = values[RunWorkflowBlockIds.workflow_select][
-        RunWorkflowActionIds.workflow_select
-    ]["selected_option"]["value"]
+    workflow_id = values[RunWorkflowBlockIds.workflow_select][RunWorkflowActionIds.workflow_select][
+        "selected_option"
+    ]["value"]
 
     incident = incident_service.get(db_session=db_session, incident_id=context["subject"].id)
+    selected_workflow = workflow_service.get(db_session=db_session, workflow_id=workflow_id)
 
-    selected_workflow = workflow_service.get_by_name(
-        db_session=db_session, name=selected_workflow_name
-    )
     blocks = [
         Context(elements=[MarkdownText(text="Select a workflow to run.")]),
         workflow_select(
-            initial_option=selected_workflow.name,
+            initial_option={"text": selected_workflow.name, "value": selected_workflow.id},
             db_session=db_session,
             dispatch_action=True,
             project_id=incident.project.id,

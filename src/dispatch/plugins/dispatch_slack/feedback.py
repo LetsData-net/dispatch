@@ -45,7 +45,7 @@ class FeedbackNotificationActions(DispatchEnum):
 def rating_select(
     action_id: str = FeedbackNotificationActionIds.rating_select,
     block_id: str = FeedbackNotificationBlockIds.rating_select,
-    initial_option: str = None,
+    initial_option: dict = None,
     label: str = "Feedback Rating",
     **kwargs,
 ):
@@ -54,7 +54,7 @@ def rating_select(
         block_id=block_id,
         initial_option=initial_option,
         label=label,
-        options=[r for r in FeedbackRating],
+        options=[{"text": r, "value": r} for r in FeedbackRating],
         placeholder="Select Rating",
         **kwargs,
     )

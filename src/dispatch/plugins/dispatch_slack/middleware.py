@@ -8,6 +8,8 @@ from dispatch.conversation import service as conversation_service
 from dispatch.conversation.models import Conversation
 from dispatch.database.core import SessionLocal, engine, sessionmaker
 from dispatch.organization import service as organization_service
+from dispatch.participant import service as participant_service
+from dispatch.participant_role.enums import ParticipantRoleType
 
 from .models import SubjectMetadata
 
@@ -79,6 +81,22 @@ async def message_context_middleware(context, next):
     await next()
 
 
+async def restricted_command_middleware(context, db_session, user, next):
+    """Rejects commands from unauthorized individuals."""
+    allowed_roles = [ParticipantRoleType.incident_commander, ParticipantRoleType.scribe]
+    participant = participant_service.get_by_incident_id_and_email(
+        db_session=db_session, incident_id=context["subject"].id, email=user.email
+    )
+
+    # if any required role is active, allow command
+    for active_role in participant.active_roles:
+        for allowed_role in allowed_roles:
+            if active_role.role == allowed_role:
+                return await next()
+
+    raise Exception("Unauthorized.")
+
+
 async def user_middleware(body, payload, db_session, client, context, next):
     """Attempts to determine the user making the request."""
 
@@ -86,9 +104,13 @@ async def user_middleware(body, payload, db_session, client, context, next):
     if body.get("user"):
         user_id = body["user"]["id"]
 
-    # for messages and commands
+    # for messages
     if payload.get("user"):
         user_id = payload["user"]
+
+    # for commands
+    if payload.get("user_id"):
+        user_id = payload["user_id"]
 
     email = (await client.users_info(user=user_id))["user"]["profile"]["email"]
     context["user"] = user_service.get_or_create(
@@ -117,6 +139,11 @@ async def modal_submit_middleware(body, context, next):
                 parsed_data[state] = {
                     "name": elem_key_value_pair.get("selected_option").get("text").get("text"),
                     "value": elem_key_value_pair.get("selected_option").get("value"),
+                }
+            elif elem_key_value_pair.get("selected_user"):
+                parsed_data[state] = {
+                    "name": "user",
+                    "value": elem_key_value_pair.get("selected_user"),
                 }
             elif "selected_options" in elem_key_value_pair.keys():
                 name = "No option selected"

@@ -102,12 +102,12 @@ def date_picker_input(
 def hour_picker_input(
     action_id: str = DefaultActionIds.hour_picker_input,
     block_id: str = DefaultBlockIds.hour_picker_input,
-    initial_option: str = None,
+    initial_option: dict = None,
     label: str = "Hour",
     **kwargs,
 ):
     """Builds a hour picker input."""
-    hours = [str(h).zfill(2) for h in range(0, 24)]
+    hours = [{"text": str(h).zfill(2), "value": str(h).zfill(2)} for h in range(0, 24)]
     return static_select_block(
         action_id=action_id,
         block_id=block_id,
@@ -121,12 +121,12 @@ def hour_picker_input(
 def minute_picker_input(
     action_id: str = DefaultActionIds.minute_picker_input,
     block_id: str = DefaultBlockIds.minute_picker_input,
-    initial_option: str = None,
+    initial_option: dict = None,
     label: str = "Minute",
     **kwargs,
 ):
     """Builds a minute picker input."""
-    minutes = [str(m).zfill(2) for m in range(0, 60)]
+    minutes = [{"text": str(m).zfill(2), "value": str(m).zfill(2)} for m in range(0, 60)]
     return static_select_block(
         action_id=action_id,
         block_id=block_id,
@@ -140,7 +140,10 @@ def minute_picker_input(
 def timezone_picker_input(
     action_id: str = DefaultActionIds.timezone_picker_input,
     block_id: str = DefaultBlockIds.timezone_picker_input,
-    initial_option: str = TimezoneOptions.local.value,
+    initial_option: dict = {
+        "text": TimezoneOptions.local.value,
+        "value": TimezoneOptions.local.value,
+    },
     label: str = "Timezone",
     **kwargs,
 ):
@@ -149,7 +152,7 @@ def timezone_picker_input(
         action_id=action_id,
         block_id=block_id,
         initial_option=initial_option,
-        options=[tz.value for tz in TimezoneOptions],
+        options=[{"text": tz.value, "value": tz.value} for tz in TimezoneOptions],
         label=label,
         placeholder="Timezone",
     )
@@ -176,7 +179,7 @@ def static_select_block(
     placeholder: str,
     action_id: str = None,
     block_id: str = None,
-    initial_option: str = None,
+    initial_option: dict = None,
     label: str = None,
     **kwargs,
 ):
@@ -184,10 +187,8 @@ def static_select_block(
     return Input(
         element=StaticSelect(
             placeholder=placeholder,
-            options=[PlainOption(text=x, value=x) for x in options],
-            initial_option=PlainOption(text=initial_option, value=initial_option)
-            if initial_option
-            else None,
+            options=[PlainOption(**x) for x in options],
+            initial_option=PlainOption(**initial_option) if initial_option else None,
             action_id=action_id,
         ),
         block_id=block_id,
@@ -201,11 +202,13 @@ def project_select(
     action_id: str = DefaultActionIds.project_select,
     block_id: str = DefaultBlockIds.project_select,
     label: str = "Project",
-    initial_option: str = None,
+    initial_option: dict = None,
     **kwargs,
 ):
     """Creates a project select."""
-    projects = [p.name for p in project_service.get_all(db_session=db_session)]
+    projects = [
+        {"text": p.name, "value": p.id} for p in project_service.get_all(db_session=db_session)
+    ]
     return static_select_block(
         placeholder="Select Project",
         options=projects,
@@ -284,13 +287,13 @@ def incident_priority_select(
     action_id: str = DefaultActionIds.incident_priority_select,
     block_id: str = DefaultBlockIds.incident_priority_select,
     label: str = "Incident Priority",
-    initial_option: str = None,
+    initial_option: dict = None,
     project_id: int = None,
     **kwargs,
 ):
     """Creates a incident priority select."""
     priorities = [
-        p.name
+        {"text": p.name, "value": p.id}
         for p in incident_priority_service.get_all_enabled(
             db_session=db_session, project_id=project_id
         )
@@ -310,11 +313,11 @@ def incident_status_select(
     block_id: str = DefaultActionIds.incident_status_select,
     action_id: str = DefaultBlockIds.incident_status_select,
     label: str = "Incident Status",
-    initial_option: str = None,
+    initial_option: dict = None,
     **kwargs,
 ):
     """Creates an incident status select."""
-    statuses = [s.value for s in IncidentStatus]
+    statuses = [{"text": s.value, "value": s.value} for s in IncidentStatus]
     return static_select_block(
         placeholder="Select Status",
         options=statuses,
@@ -331,13 +334,13 @@ def incident_severity_select(
     action_id: str = DefaultActionIds.incident_severity_select,
     block_id: str = DefaultBlockIds.incident_severity_select,
     label="Incident Severity",
-    initial_option: str = None,
+    initial_option: dict = None,
     project_id: int = None,
     **kwargs,
 ):
     """Creates an incident severity select."""
     severities = [
-        s.name
+        {"text": s.name, "value": s.id}
         for s in incident_severity_service.get_all_enabled(
             db_session=db_session, project_id=project_id
         )
@@ -358,13 +361,13 @@ def incident_type_select(
     action_id: str = DefaultActionIds.incident_type_select,
     block_id: str = DefaultBlockIds.incident_type_select,
     label="Incident Type",
-    initial_option: str = None,
+    initial_option: dict = None,
     project_id: int = None,
     **kwargs,
 ):
     """Creates an incident type select."""
     types = [
-        t.name
+        {"text": t.name, "value": t.id}
         for t in incident_type_service.get_all_enabled(db_session=db_session, project_id=project_id)
     ]
     return static_select_block(
@@ -392,6 +395,7 @@ def tag_multi_select(
         ),
         block_id=block_id,
         label=label,
+        **kwargs,
     )
 
 
@@ -400,13 +404,13 @@ def case_priority_select(
     action_id: str = DefaultActionIds.case_priority_select,
     block_id: str = DefaultBlockIds.case_priority_select,
     label="Case Priority",
-    initial_option: str = None,
+    initial_option: dict = None,
     project_id: int = None,
     **kwargs,
 ):
     """Creates a case priority select."""
     priorities = [
-        p.name
+        {"text": p.name, "value": p.id}
         for p in case_priority_service.get_all_enabled(db_session=db_session, project_id=project_id)
     ]
     return static_select_block(
@@ -424,11 +428,11 @@ def case_status_select(
     action_id: str = DefaultActionIds.case_status_select,
     block_id: str = DefaultBlockIds.case_status_select,
     label: str = "Status",
-    initial_option: str = None,
+    initial_option: dict = None,
     **kwargs,
 ):
     """Creates a case status select."""
-    statuses = [str(s) for s in CaseStatus]
+    statuses = [{"text": str(s), "value": str(s)} for s in CaseStatus]
     return static_select_block(
         placeholder="Select Status",
         options=statuses,
@@ -445,13 +449,13 @@ def case_severity_select(
     action_id: str = DefaultActionIds.case_severity_select,
     block_id: str = DefaultBlockIds.case_severity_select,
     label: str = "Case Severity",
-    initial_option: str = None,
+    initial_option: dict = None,
     project_id: int = None,
     **kwargs,
 ):
     """Creates an case severity select."""
     severities = [
-        s.name
+        {"text": s.name, "value": s.id}
         for s in case_severity_service.get_all_enabled(db_session=db_session, project_id=project_id)
     ]
     return static_select_block(
@@ -470,13 +474,13 @@ def case_type_select(
     action_id: str = DefaultActionIds.case_type_select,
     block_id: str = DefaultBlockIds.case_type_select,
     label: str = "Case Type",
-    initial_option: str = None,
+    initial_option: dict = None,
     project_id: int = None,
     **kwargs,
 ):
     """Creates an case type select."""
     types = [
-        t.name
+        {"text": t.name, "value": t.id}
         for t in case_type_service.get_all_enabled(db_session=db_session, project_id=project_id)
     ]
     return static_select_block(
@@ -499,7 +503,7 @@ def participant_select(
     **kwargs,
 ):
     """Creates a static select of available participants."""
-    participants = [p.individual.name for p in participants]
+    participants = [{"text": p.individual.name, "value": p.individual.id} for p in participants]
     return static_select_block(
         placeholder="Select Participant",
         options=participants,

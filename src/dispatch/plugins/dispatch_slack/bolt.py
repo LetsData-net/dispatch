@@ -17,7 +17,7 @@ from .listeners import MultiMessageListener
 app = AsyncApp(token="xoxb-valid", raise_error_for_unhandled_request=True)
 router = APIRouter()
 
-app.use(MultiMessageListener)
+# app.use(MultiMessageListener)
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -26,6 +26,9 @@ logging.basicConfig(level=logging.DEBUG)
 async def errors(error, body, context, logger, respond):
     logger.exception(error)
     logger.debug(error)
+    from pprint import pprint
+
+    pprint(body)
 
 
 async def to_bolt_request(
