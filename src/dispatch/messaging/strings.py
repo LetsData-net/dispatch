@@ -157,7 +157,7 @@ It is shared with all incident participants.""".replace(
 ).strip()
 
 INCIDENT_FAQ_DOCUMENT_DESCRIPTION = """
-First time responding to an information security incident? This
+First time responding to an incident? This
 document answers common questions encountered when
 helping us respond to an incident.""".replace(
     "\n", " "
@@ -196,10 +196,9 @@ Description of the actions taken to resolve the case.
 ).strip()
 
 INCIDENT_PARTICIPANT_WELCOME_DESCRIPTION = """
-You\'re being contacted because we think you may
-be able to help us during this information security incident.
-Please review the content below and join us in the
-incident Slack channel.""".replace(
+You\'ve been added to this incident, because we think you may
+be able to help resolve it. Please review the incident details below and
+reach out to the incident commander if you have any questions.""".replace(
     "\n", " "
 ).strip()
 
@@ -230,8 +229,8 @@ You can use `{{command}}` in the conversation to assist you in writing one.""".r
     "\n", " "
 ).strip()
 
-INCIDENT_STATUS_REMINDER_DESCRIPTION = """You have not updated the status for this incident recently. If the incident has been resolved,
-you can use `{{command}}` in the conversation to assist you in closing your incident.""".replace(
+INCIDENT_CLOSE_REMINDER_DESCRIPTION = """The status of this incident hasn't been updated recently.
+You can use `{{command}}` in the conversation to close the incident if it has been resolved and can be closed.""".replace(
     "\n", " "
 ).strip()
 
@@ -251,8 +250,8 @@ Please review and mark them as resolved if appropriate. Resolving them will stop
 INCIDENT_TASK_LIST_DESCRIPTION = """The following are open incident tasks."""
 
 INCIDENT_OPEN_TASKS_DESCRIPTION = """
-Please resolve or transfer ownership of all the open incident tasks owned by you directly in the incident documents or using the <{{dispatch_ui_url}}|Dispatch Web UI>,
-then wait about 30 seconds for Dispatch to update the tasks before leaving the incident channel.
+Please resolve or transfer ownership of all the open incident tasks assigned to you in the incident documents or using the <{{dispatch_ui_url}}|Dispatch Web UI>,
+then wait about 30 seconds for Dispatch to update the tasks before leaving the incident conversation.
 """.replace(
     "\n", " "
 ).strip()
@@ -300,8 +299,7 @@ Thanks for closing incident {{name}}. Please, take a minute to review and update
 \n • Incident Type: {{type}}
 \n • Incident Severity: {{severity}}
 \n • Incident Priority: {{priority}}
-\n\n
-Also, please consider taking the following actions:
+\n Also, please consider taking the following actions:
 \n • Update or add any relevant tags to the incident using the <{{dispatch_ui_incident_url}}|Dispatch Web UI>.
 \n • Add any relevant, non-operational costs to the incident using the <{{dispatch_ui_incident_url}}|Dispatch Web UI>.
 \n • Review and close any incident tasks that are no longer relevant or required.
@@ -314,7 +312,7 @@ INCIDENT_MANAGEMENT_HELP_TIPS_MESSAGE_DESCRIPTION = """
 Hey, I see you're the Incident Commander for {{name}} ("{{title}}"). Here are a few things to consider when managing the incident:
 \n • Keep the incident and its status up to date using the Slack `{{update_command}}` command.
 \n • Invite incident participants and team oncalls by mentioning them in the incident channel or using the Slack `{{engage_oncall_command}}` command.
-\n • Keep incident participants and stakeholders informed using the `{{tactical_report_command}}` and `{{executive_report_command}}` commands.
+\n • Keep incident participants and stakeholders informed by creating tactical and executive reports using the `{{tactical_report_command}}` and `{{executive_report_command}}` commands.
 \n • Get links to all incident resources including the Slack commands reference sheet and Security Incident Response FAQ by running the `{{list_resources_command}}` command.
 \n
 To find a Slack command, simply type `/` in the message field or click the lightning bolt icon to the left of the message field.
@@ -558,11 +556,11 @@ INCIDENT_REPORT_REMINDER = [
 ]
 
 
-INCIDENT_STATUS_REMINDER = [
+INCIDENT_CLOSE_REMINDER = [
     {
-        "title": "{{name}} Incident - Status Reminder",
+        "title": "{{name}} Incident - Close Reminder",
         "title_link": "{{ticket_weblink}}",
-        "text": INCIDENT_STATUS_REMINDER_DESCRIPTION,
+        "text": INCIDENT_CLOSE_REMINDER_DESCRIPTION,
     },
     INCIDENT_TITLE,
     INCIDENT_STATUS,
