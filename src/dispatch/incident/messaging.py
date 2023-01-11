@@ -186,6 +186,7 @@ def send_welcome_email_to_participant(
     message_kwargs = {
         "name": incident.name,
         "title": incident.title,
+        "subject": f"LetsData. Code {incident.incident_priority.name}. {incident.title}",
         "description": incident_description,
         "visibility": incident.visibility,
         "status": incident.status,
