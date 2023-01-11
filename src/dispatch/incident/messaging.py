@@ -177,17 +177,11 @@ def send_welcome_email_to_participant(
         log.warning("Participant welcome email not sent, not email plugin configured.")
         return
 
-    incident_description = (
-        incident.description
-        if len(incident.description) <= 500
-        else f"{incident.description[:500]}..."
-    )
-
     message_kwargs = {
         "name": incident.name,
         "title": incident.title,
         "subject": f"LetsData. Code {incident.incident_priority.name}. {incident.title}",
-        "description": incident_description,
+        "description": incident.description,
         "visibility": incident.visibility,
         "status": incident.status,
         "type": incident.incident_type.name,
