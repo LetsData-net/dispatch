@@ -224,3 +224,5 @@ ALEMBIC_MULTI_TENANT_MIGRATION_PATH = config(
     "ALEMBIC_MULTI_TENANT_MIGRATION_PATH",
     default=f"{os.path.dirname(os.path.realpath(__file__))}/database/revisions/multi-tenant-migration.sql",
 )
+
+FEEDBACK_WEBHOOK_SECRET = config("FEEDBACK_WEBHOOK_SECRET", default="")
