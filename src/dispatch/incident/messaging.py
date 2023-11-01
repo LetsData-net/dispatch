@@ -8,6 +8,7 @@ import logging
 
 from dispatch.decorators import timer
 from dispatch.config import DISPATCH_UI_URL
+from dispatch.config import FEEDBACK_WEBHOOK_SECRET
 from dispatch.conversation.enums import ConversationCommands
 from dispatch.database.core import SessionLocal, resolve_attr
 from dispatch.document import service as document_service
@@ -154,6 +155,7 @@ def send_welcome_email_to_participant(
 
     message_kwargs = {
         "name": incident.name,
+        "project_slug": str(incident.project.slug),
         "title": incident.title,
         "subject": f"LetsData. Code {incident.incident_priority.name}. {incident.title}",
         "description": incident.description,
@@ -178,6 +180,7 @@ def send_welcome_email_to_participant(
         "conference_challenge": resolve_attr(incident, "conference.conference_challenge"),
         "contact_fullname": incident.commander.individual.name,
         "contact_weblink": incident.commander.individual.weblink,
+        "feedback_webhook_secret": FEEDBACK_WEBHOOK_SECRET,
     }
 
     faq_doc = document_service.get_incident_faq_document(
