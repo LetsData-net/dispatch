@@ -251,7 +251,7 @@ def add_conversation_bookmark(
     """Adds a conversation bookmark."""
     if not subject.conversation:
         log.warning(
-            f"Conversation bookmark {resource.name.lower()} not added. No conversation available."
+            f"Conversation bookmark {resource.__class__.__name__.lower()} not added. No conversation available."
         )
         return
 
@@ -262,7 +262,7 @@ def add_conversation_bookmark(
     )
     if not plugin:
         log.warning(
-            f"Conversation bookmark {resource.name.lower()} not added. No conversation plugin enabled."
+            f"Conversation bookmark {resource.__class__.__name__.lower()} not added. No conversation plugin enabled."
         )
         return
 
@@ -277,7 +277,7 @@ def add_conversation_bookmark(
             )
             if resource
             else log.warning(
-                f"{resource.name} bookmark not added. No {resource.name.lower()} available for subject.."
+                f"{resource.__class__.__name__} bookmark not added. No {resource.__class__.__name__.lower()} available for subject.."
             )
         )
     except Exception as e:
@@ -285,7 +285,7 @@ def add_conversation_bookmark(
             subject=subject,
             db_session=db_session,
             source="Dispatch Core App",
-            description=f"Adding the {resource.name.lower()} bookmark failed. Reason: {e}",
+            description=f"Adding the {resource.__class__.__name__.lower()} bookmark failed. Reason: {e}",
         )
         log.exception(e)
 
