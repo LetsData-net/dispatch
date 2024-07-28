@@ -86,7 +86,7 @@ RUN set -x \
     && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 
 RUN set -x \
-    && wget --quiet -O - https://deb.nodesource.com/setup_12.x | bash -
+    && wget --quiet -O - https://deb.nodesource.com/setup_16.x | bash -
 
 COPY --from=sdist /dist/*.whl /tmp/dist/
 RUN set -x \
@@ -104,7 +104,7 @@ RUN set -x \
     pkg-config postgresql-client-14 nodejs \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
-    && npm install mjml
+    && npm install -g mjml
 
 EXPOSE 8000
 VOLUME /var/lib/dispatch/files
