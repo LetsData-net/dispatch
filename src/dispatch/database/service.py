@@ -624,20 +624,25 @@ def search_filter_sort_paginate(
     }
 
 
-def defer_incident_columns(query: orm.Query):
-    return query.options(
+def defer_incident_columns(query: orm.Query, defer_location: bool = True, defer_name_and_title: bool = False):
+    options = [
         defer(Incident.description),
         defer(Incident.resolution),
         defer(Incident.search_vector),
-        defer(Incident.commanders_location),
-        defer(Incident.participants_location),
-        defer(Incident.reporters_location),
         defer(Incident.delay_tactical_report_reminder),
         defer(Incident.delay_executive_report_reminder),
         defer(Incident.scribe_id),
         defer(Incident.liaison_id),
         defer(Incident.duplicate_id),
-    )
+    ]
+    if defer_location:
+        options.append(defer(Incident.commanders_location))
+        options.append(defer(Incident.participants_location))
+        options.append(defer(Incident.reporters_location))
+    if defer_name_and_title:
+        options.append(defer(Incident.name))
+        options.append(defer(Incident.title))
+    return query.options(*options)
 
 
 def restricted_incident_filter(query: orm.Query, current_user: DispatchUser, role: UserRoles):
