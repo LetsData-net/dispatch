@@ -14,6 +14,7 @@ from six import string_types
 from sortedcontainers import SortedSet
 from sqlalchemy import and_, desc, func, not_, or_, orm
 from sqlalchemy.exc import InvalidRequestError, ProgrammingError
+from sqlalchemy.orm import defer
 from sqlalchemy.orm.mapper import Mapper
 from sqlalchemy_filters import apply_pagination, apply_sort
 from sqlalchemy_filters.exceptions import BadFilterFormat, FieldNotFound
@@ -37,7 +38,6 @@ from dispatch.search.fulltext.composite_search import CompositeSearch
 from dispatch.signal.models import Signal, SignalInstance
 from dispatch.tag.models import Tag
 from dispatch.task.models import Task
-
 from .core import Base, get_class_by_tablename, get_model_name_by_tablename
 
 log = logging.getLogger(__file__)
@@ -572,6 +572,7 @@ def search_filter_sort_paginate(
                 query = apply_filters(query, filter_spec, model_cls)
 
         if model == "Incident":
+            query = defer_incident_columns(query=query)
             query = query.intersect(query_restricted)
             for filter in tag_all_filters:
                 query = query.intersect(filter)
@@ -623,8 +624,19 @@ def search_filter_sort_paginate(
     }
 
 
+def defer_incident_columns(query: orm.Query):
+    return query.options(
+        defer(Incident.description),
+        defer(Incident.resolution),
+        defer(Incident.search_vector),
+        defer(Incident.commanders_location),
+        defer(Incident.participants_location),
+    )
+
+
 def restricted_incident_filter(query: orm.Query, current_user: DispatchUser, role: UserRoles):
     """Adds additional incident filters to query (usually for permissions)."""
+    query = defer_incident_columns(query=query)
     if role == UserRoles.member:
         # We filter out restricted incidents for users with a member role if the user is not an incident participant
         query = (
