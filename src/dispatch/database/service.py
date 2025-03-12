@@ -631,6 +631,12 @@ def defer_incident_columns(query: orm.Query):
         defer(Incident.search_vector),
         defer(Incident.commanders_location),
         defer(Incident.participants_location),
+        defer(Incident.reporters_location),
+        defer(Incident.delay_tactical_report_reminder),
+        defer(Incident.delay_executive_report_reminder),
+        defer(Incident.scribe_id),
+        defer(Incident.liaison_id),
+        defer(Incident.duplicate_id),
     )
 
 

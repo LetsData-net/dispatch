@@ -193,7 +193,7 @@ class Incident(Base, TimeStampMixin, ProjectMixin):
 
     duplicate_id = Column(Integer, ForeignKey("incident.id"))
     duplicates = relationship(
-        "Incident", remote_side=[id], lazy="joined", join_depth=2, uselist=True
+        "Incident", remote_side=[id], lazy="noload", uselist=True
     )
 
     commander_id = Column(Integer, ForeignKey("participant.id"))

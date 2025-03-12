@@ -124,7 +124,7 @@ class Case(Base, TimeStampMixin, ProjectMixin):
     )
 
     duplicate_id = Column(Integer, ForeignKey("case.id"))
-    duplicates = relationship("Case", remote_side=[id], uselist=True, foreign_keys=[duplicate_id])
+    duplicates = relationship("Case", remote_side=[id], lazy="noload", uselist=True, foreign_keys=[duplicate_id])
 
     events = relationship("Event", backref="case", cascade="all, delete-orphan")
 
