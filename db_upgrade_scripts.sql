@@ -1,6 +1,9 @@
 CREATE INDEX IF NOT EXISTS incident_name_index
   ON dispatch_organization_default.incident (name);
 
+CREATE INDEX IF NOT EXISTS incident_reported_at_index
+  ON dispatch_organization_default.incident (reported_at DESC);
+
 CREATE INDEX IF NOT EXISTS incident_reporter_id_reported_at_index
   ON dispatch_organization_default.incident (reporter_id, reported_at DESC);
 
