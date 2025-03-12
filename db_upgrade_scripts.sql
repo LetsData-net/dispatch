@@ -19,6 +19,9 @@ CREATE INDEX IF NOT EXISTS incident_visibility_reported_at_index
 CREATE INDEX IF NOT EXISTS incident_duplicate_id_index
   ON dispatch_organization_default.incident (duplicate_id);
 
+CREATE INDEX IF NOT EXISTS incident_incident_type_id_index
+  ON dispatch_organization_default.incident (incident_type_id);
+
 CREATE INDEX IF NOT EXISTS participant_incident_id_index
   ON dispatch_organization_default.participant (incident_id DESC);
 
@@ -31,10 +34,11 @@ CREATE INDEX IF NOT EXISTS individual_contact_email_index
 CREATE INDEX IF NOT EXISTS participant_role_participant_id_index
   ON dispatch_organization_default.participant_role (participant_id ASC);
 
+CREATE INDEX IF NOT EXISTS event_incident_id_index
+  ON dispatch_organization_default.event (incident_id);
+
 CREATE INDEX IF NOT EXISTS incident_cost_incident_id_created_at_index
   ON dispatch_organization_default.incident_cost (incident_id, created_at);
 
 CREATE INDEX IF NOT EXISTS incident_type_exclude_from_metrics_idx
   ON dispatch_organization_default.incident_type (exclude_from_metrics);
-
-
