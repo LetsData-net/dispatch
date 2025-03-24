@@ -19,3 +19,7 @@ This means you can let Dispatch focus on creating resources, assembling particip
 - [Docs](https://netflix.github.io/dispatch/)
 - [Issue tracker](https://github.com/netflix/dispatch/issues)
 - [Docker](https://github.com/Netflix/dispatch-docker)
+
+## How to Run the Project
+
+[LOCAL_RUN.md](LOCAL_RUN.md)
