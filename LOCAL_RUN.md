@@ -54,8 +54,8 @@ Before the start make sure to adjust the following:
 3. Restart `PyCharm`
 4. Create a new Run Configuration
    - you can create a `FastAPI` configuration
-   ![fastapi_configuration.png](assets%2Ffastapi_configuration.png)
+   ![fastapi_configuration.png](assets/fastapi_configuration.png)
    - or you can create a `Python` configuration
-   ![python_configuration.png](assets%2Fpython_configuration.png)
+   ![python_configuration.png](assets/python_configuration.png)
 5. Run the project via `PyCharm` and use breakpoints for debugging
    The API will be accessible at [http://127.0.0.1:8000/api/v1/docs](http://127.0.0.1:8000/api/v1/docs).
