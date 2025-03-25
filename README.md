@@ -22,4 +22,5 @@ This means you can let Dispatch focus on creating resources, assembling particip
 
 ## How to Run the Project
 
-[LOCAL_RUN.md](LOCAL_RUN.md)
+1. run backend, the instruction in the following file: [LOCAL_RUN.md](LOCAL_RUN.md)
+2. run frontend, see the instruction here: [README.md](src/dispatch/static/dispatch/README.md)

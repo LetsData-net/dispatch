@@ -12,7 +12,11 @@ Before the start make sure to adjust the following:
    psql -u postgres
    CREATE ROLE dispatch WITH LOGIN PASSWORD '<password>' ;
    ```
-   Then run [update-example-data.sh](data%2Fupdate-example-data.sh)
+   Then run [update-example-data.sh](data/update-example-data.sh)
+   Also you may need to create locally a user for testing, so use the following command:
+   ```bash
+   dispatch user register -o default -r Admin <your-email@mail.com>
+   ```
 
 ## Required settings
 
