@@ -1,109 +1,81 @@
 <template>
   <v-form @submit.prevent="report()" v-slot="{ isValid }">
-    <v-card
-      class="mx-auto ma-4"
-      title="Report Incident"
-      max-width="600"
-      variant="outlined"
-      :loading="loading"
-    >
-      <template #append>
-        <v-tooltip location="bottom">
-          <template #activator="{ props }">
-            <v-btn icon variant="text" v-bind="props" @click="copyView">
-              <v-icon>mdi-content-copy</v-icon>
-            </v-btn>
-          </template>
-          <span>Copy current fields as template.</span>
-        </v-tooltip>
-      </template>
-      <v-card-text>
-        <p>
-          If you suspect an incident and need help, please fill out this form to the best of your
-          abilities.
-        </p>
-        <p v-if="project_faq">
-          If you have additional questions, please check out the following FAQ document:
-          <a :href="project_faq.weblink" target="_blank" style="text-decoration: none">
-            {{ project_faq.name }}
-            <v-icon size="small">mdi-open-in-new</v-icon>
-          </a>
-        </p>
-        <v-row>
-          <v-col cols="12">
+    <v-row class="ma-4" dense>
+      <v-col cols="12" md="1" />
+      <v-col cols="12" md="7">
+        <v-card variant="outlined">
+          <v-card-title>Description</v-card-title>
+          <v-card-text>
+            <div v-if="!preview">
+              <RichTextEditor v-model="description" />
+            </div>
+            <div v-else class="preview" v-html="description" />
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <v-col cols="12" md="3">
+        <v-card variant="outlined">
+          <v-card-title>Details</v-card-title>
+          <v-card-text>
             <v-textarea
               v-model="title"
               label="Title"
-              hint="A brief explanatory title. You can change this later."
+              hint="Brief title"
               clearable
               auto-grow
               rows="2"
-              required
-              name="Title"
+              :disabled="preview"
               :rules="[rules.required]"
             />
-          </v-col>
-          <v-col cols="12">
-            <v-textarea
-              v-model="description"
-              label="Description"
-              hint="A summary of what you know so far. It's all right if this is incomplete."
-              clearable
-              auto-grow
-              rows="3"
-              required
-              name="Description"
-              :rules="[rules.required]"
+
+            <project-select v-model="project" :disabled="preview" excludeDisabled />
+            <incident-type-select :project="project" v-model="incident_type" :disabled="preview" />
+            <incident-priority-select
+              :project="project"
+              v-model="incident_priority"
+              :disabled="preview"
             />
-          </v-col>
-          <v-col cols="12">
-            <project-select v-model="project" excludeDisabled />
-          </v-col>
-          <v-col cols="12">
-            <incident-type-select :project="project" v-model="incident_type" />
-          </v-col>
-          <v-col cols="12">
-            <incident-priority-select :project="project" v-model="incident_priority" />
-          </v-col>
-          <v-col cols="12">
             <tag-filter-auto-complete
               :project="project"
               v-model="tags"
               label="Tags"
               model="incident"
+              :disabled="preview"
             />
-          </v-col>
-          <v-col cols="12">
             <participant-select
               v-model="local_commander"
               label="Optional: Incident Commander"
               hint="If not entered, the current on-call will be assigned."
               clearable
               :project="project"
-              name="Optional: Incident Commander"
+              :disabled="preview"
               :rules="[only_one]"
             />
-          </v-col>
-        </v-row>
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer />
+          </v-card-text>
 
-        <v-btn
-          color="info"
-          block
-          variant="flat"
-          :loading="loading"
-          :disabled="!isValid.value"
-          type="submit"
-        >
-          Submit
-          <template #loader>
-            <v-progress-linear indeterminate color="white" />
-          </template>
-        </v-btn>
-      </v-card-actions>
-    </v-card>
+          <v-card-actions>
+            <v-spacer />
+            <v-btn v-if="!preview" color="info" block @click="preview = true"> Preview </v-btn>
+            <div v-else class="d-flex flex-column gap-2 w-100">
+              <v-btn color="primary" block @click="preview = false">Edit</v-btn>
+              <v-btn
+                color="success"
+                block
+                :loading="loading"
+                :disabled="!isValid.value"
+                type="submit"
+              >
+                Submit
+                <template #loader>
+                  <v-progress-linear indeterminate color="white" />
+                </template>
+              </v-btn>
+            </div>
+          </v-card-actions>
+        </v-card>
+      </v-col>
+    </v-row>
   </v-form>
 </template>
 
@@ -124,6 +96,7 @@ import IncidentTypeSelect from "@/incident/type/IncidentTypeSelect.vue"
 import ProjectSelect from "@/project/ProjectSelect.vue"
 import TagFilterAutoComplete from "@/tag/TagPicker.vue"
 import ParticipantSelect from "@/components/ParticipantSelect.vue"
+import RichTextEditor from "@/incident/RichTextEditor/RichTextEditor.vue"
 
 export default {
   setup() {
@@ -134,6 +107,7 @@ export default {
   name: "ReportSubmissionCard",
 
   components: {
+    RichTextEditor,
     IncidentTypeSelect,
     IncidentPrioritySelect,
     ProjectSelect,
@@ -143,6 +117,7 @@ export default {
 
   data() {
     return {
+      preview: false,
       isSubmitted: false,
       project_faq: null,
       local_commander: null,
@@ -346,3 +321,13 @@ export default {
   },
 }
 </script>
+
+<style scoped>
+.preview {
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  padding: 1rem;
+  background: #f9f9f9;
+  min-height: 300px;
+}
+</style>
