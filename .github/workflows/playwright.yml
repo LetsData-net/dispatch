@@ -59,7 +59,7 @@ jobs:
         run: dispatch database restore --dump-file data/dispatch-sample-data.dump && dispatch database upgrade
       - name: Run tests
         run: npx playwright test --project=chromium
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: playwright-report
