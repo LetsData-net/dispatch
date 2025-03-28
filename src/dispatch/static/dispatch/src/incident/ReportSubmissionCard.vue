@@ -327,7 +327,7 @@ export default {
   border-radius: 10px;
   padding: 1rem;
   background: #f9f9f9;
-  min-height: 300px;
+  min-height: 70vh;
 }
 
 .form-wrapper {

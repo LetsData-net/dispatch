@@ -6,107 +6,118 @@
           @click="editor.chain().focus().toggleBold().run()"
           :disabled="!editor.can().chain().focus().toggleBold().run()"
           :class="{ 'is-active': editor.isActive('bold') }"
+          title="Bold"
         >
-          Bold
+          <strong>B</strong>
         </button>
+
         <button
           @click="editor.chain().focus().toggleItalic().run()"
           :disabled="!editor.can().chain().focus().toggleItalic().run()"
           :class="{ 'is-active': editor.isActive('italic') }"
+          title="Italic"
         >
-          Italic
+          <em>I</em>
         </button>
+
         <button
           @click="editor.chain().focus().toggleStrike().run()"
           :disabled="!editor.can().chain().focus().toggleStrike().run()"
           :class="{ 'is-active': editor.isActive('strike') }"
+          title="Strikethrough"
         >
-          Strike
-        </button>
-        <button
-          @click="editor.chain().focus().toggleCode().run()"
-          :disabled="!editor.can().chain().focus().toggleCode().run()"
-          :class="{ 'is-active': editor.isActive('code') }"
-        >
-          Code
-        </button>
-
-        <button @click="editor.chain().focus().unsetAllMarks().run()">Clear marks</button>
-        <button @click="editor.chain().focus().clearNodes().run()">Clear nodes</button>
-
-        <button
-          @click="editor.chain().focus().setParagraph().run()"
-          :class="{ 'is-active': editor.isActive('paragraph') }"
-        >
-          Paragraph
+          <s>S</s>
         </button>
 
         <button
-          v-for="level in 6"
-          :key="level"
-          @click="editor.chain().focus().toggleHeading({ level }).run()"
-          :class="{ 'is-active': editor.isActive('heading', { level }) }"
+          @click="editor.chain().focus().toggleHeading({ level: 1 }).run()"
+          :class="{ 'is-active': editor.isActive('heading', { level: 1 }) }"
+          title="Heading 1"
         >
-          H{{ level }}
+          H1
+        </button>
+
+        <button
+          @click="editor.chain().focus().toggleHeading({ level: 2 }).run()"
+          :class="{ 'is-active': editor.isActive('heading', { level: 2 }) }"
+          title="Heading 2"
+        >
+          h2
         </button>
 
         <button
           @click="editor.chain().focus().toggleBulletList().run()"
           :class="{ 'is-active': editor.isActive('bulletList') }"
+          title="Bullet list"
         >
-          Bullet list
+          • List
         </button>
+
         <button
           @click="editor.chain().focus().toggleOrderedList().run()"
           :class="{ 'is-active': editor.isActive('orderedList') }"
+          title="Numbered list"
         >
-          Ordered list
+          1. List
+        </button>
+
+        <button @click="setLink" title="Insert link">Link</button>
+
+        <button
+          @click="editor.chain().focus().setHorizontalRule().run()"
+          title="Insert divider"
+        >
+          Divider
         </button>
 
         <button
-          @click="editor.chain().focus().toggleCodeBlock().run()"
-          :class="{ 'is-active': editor.isActive('codeBlock') }"
+          @click="editor.chain().focus().setHardBreak().run()"
+          title="Insert hard break"
         >
-          Code block
-        </button>
-        <button
-          @click="editor.chain().focus().toggleBlockquote().run()"
-          :class="{ 'is-active': editor.isActive('blockquote') }"
-        >
-          Blockquote
-        </button>
-        <button @click="editor.chain().focus().setHorizontalRule().run()">Horizontal rule</button>
-        <button @click="editor.chain().focus().setHardBreak().run()">Hard break</button>
-
-        <button
-          @click="editor.chain().focus().undo().run()"
-          :disabled="!editor.can().chain().focus().undo().run()"
-        >
-          Undo
-        </button>
-        <button
-          @click="editor.chain().focus().redo().run()"
-          :disabled="!editor.can().chain().focus().redo().run()"
-        >
-          Redo
+          [ hard break ]
         </button>
 
         <button
-          @click="editor.chain().focus().setColor('#958DF1').run()"
-          :class="{ 'is-active': editor.isActive('textStyle', { color: '#958DF1' }) }"
+          v-for="emoji in emojis"
+          :key="emoji.char"
+          @click="insertEmoji(emoji.char)"
+          :title="emoji.name"
         >
-          Purple
+          {{ emoji.char }}
         </button>
 
-        <div class="emoji-group">
-          <button v-for="emoji in emojis" :key="emoji" @click="insertEmoji(emoji)">
-            {{ emoji }}
+        <div class="emoji-dropdown">
+          <button @click="showEmojiDropdown = !showEmojiDropdown" title="All emojis">
+            all emojis
           </button>
+          <div v-if="showEmojiDropdown" class="emoji-dropdown-list">
+            <input
+              type="text"
+              v-model="emojiSearch"
+              placeholder="Search emojis..."
+              class="emoji-search"
+            />
+            <div class="emoji-list-wrapper">
+              <div class="emoji-list">
+                <span
+                  v-for="emoji in filteredAllEmojis"
+                  :key="emoji.char"
+                  @click="insertEmojiFromDropdown(emoji.char)"
+                  :title="emoji.name"
+                  class="emoji-item"
+                >
+                  {{ emoji.char }}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-    <editor-content :editor="editor" class="tiptap" />
+    <div class="editor-wrapper">
+      <editor-content :editor="editor" class="tiptap ProseMirror" />
+    </div>
   </div>
 </template>
 
@@ -116,6 +127,8 @@ import ListItem from "@tiptap/extension-list-item"
 import TextStyle from "@tiptap/extension-text-style"
 import StarterKit from "@tiptap/starter-kit"
 import { Editor, EditorContent } from "@tiptap/vue-3"
+import Link from "@tiptap/extension-link"
+import emojiData from "emoji.json"
 
 export default {
   name: "RichTextEditor",
@@ -132,8 +145,26 @@ export default {
   data() {
     return {
       editor: null,
-      emojis: ["🔴", "🟡", "🟢", "📌", "❗", "●", "➡️", "🖇"],
+      emojis: [
+        { char: "📌", name: "pushpin" },
+        { char: "➡️", name: "right arrow" },
+        { char: "🔇", name: "muted speaker" },
+        { char: "❗", name: "exclamation mark" },
+        { char: "🔴", name: "red circle" },
+        { char: "🟡", name: "yellow circle" },
+        { char: "🟢", name: "green circle" },
+      ],
+      allEmojis: emojiData.map(e => ({ char: e.char, name: e.name })),
+      showEmojiDropdown: false,
+      emojiSearch: "",
     }
+  },
+  computed: {
+    filteredAllEmojis() {
+      return this.allEmojis.filter((emoji) => {
+        return emoji.name.toLowerCase().includes(this.emojiSearch.toLowerCase())
+      })
+    },
   },
   watch: {
     modelValue(newValue) {
@@ -147,7 +178,16 @@ export default {
       extensions: [
         Color.configure({ types: [TextStyle.name, ListItem.name] }),
         TextStyle.configure({ types: [ListItem.name] }),
-        StarterKit,
+        StarterKit.configure({ codeBlock: false, blockquote: false }),
+        Link.configure({
+          openOnClick: true,
+          autolink: true,
+          HTMLAttributes: {
+            class: 'tiptap-link',
+            target: '_blank',
+            rel: 'noopener noreferrer',
+          },
+        }),
       ],
       content: this.modelValue,
       onUpdate: ({ editor }) => {
@@ -161,12 +201,23 @@ export default {
     }
   },
   methods: {
-    insertEmoji(emoji) {
-      this.editor
-        .chain()
-        .focus()
-        .insertContent(emoji + " ")
-        .run()
+    insertEmoji(emojiChar) {
+      this.editor.chain().focus().insertContent(emojiChar + " ").run()
+    },
+    insertEmojiFromDropdown(emojiChar) {
+      this.insertEmoji(emojiChar)
+      this.showEmojiDropdown = false
+      this.emojiSearch = ""
+    },
+    setLink() {
+      const previousUrl = this.editor.getAttributes("link").href
+      const url = window.prompt("Enter the URL", previousUrl)
+      if (url === null) return
+      if (url === "") {
+        this.editor.chain().focus().unsetLink().run()
+        return
+      }
+      this.editor.chain().focus().setLink({ href: url }).run()
     },
   },
 }
@@ -178,17 +229,17 @@ export default {
   font-family: sans-serif;
 }
 
-.tiptap {
-  .ProseMirror {
-    border: 1px solid black;
-    border-radius: 15px;
-    min-height: 80%;
-    padding: 10px;
-    margin: 10px;
-  }
+.ProseMirror {
+  border: 1px solid #ccc;
+  border-radius: 15px;
+  min-height: 400px;
+  padding: 10px;
+}
 
+.tiptap {
   :first-child {
     margin-top: 0;
+    min-height: 400px;
   }
 
   p {
@@ -318,8 +369,51 @@ export default {
     transition: 0.2s;
 
     &:hover {
-      background: #f0f0f0;
+      background: #f9f9f9;
     }
   }
+}
+
+.emoji-dropdown-list {
+  position: absolute;
+  top: 110%;
+  left: 0;
+  background: white;
+  border: 1px solid #ccc;
+  padding: 0.5rem;
+  border-radius: 6px;
+  z-index: 10;
+  width: 240px;
+}
+
+.emoji-search {
+  width: 100%;
+  margin-bottom: 0.5rem;
+  padding: 0.3rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.emoji-list-wrapper {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.emoji-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.emoji-item {
+  font-size: 1.4rem;
+  padding: 0.25rem;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.emoji-item:hover {
+  background: #f0f0f0;
 }
 </style>
