@@ -1,23 +1,32 @@
 <template>
-  <v-form @submit.prevent="report()" v-slot="{ isValid }">
+  <v-form @submit.prevent="report()" v-slot="{ isValid }" class="form-wrapper">
     <v-row class="ma-4" dense>
-      <v-col cols="12" md="1" />
-      <v-col cols="12" md="7">
-        <v-card variant="outlined">
-          <v-card-title>Description</v-card-title>
-          <v-card-text>
-            <div v-if="!preview">
-              <RichTextEditor v-model="description" />
-            </div>
-            <div v-else class="preview" v-html="description" />
+      <v-col :cols="previewCollapsed ? 1 : 5">
+        <v-card variant="outlined" class="d-flex flex-column h-100">
+          <v-card-title class="justify-center">
+            <v-btn icon variant="text" @click="togglePreview">
+              <v-icon>{{ previewCollapsed ? "mdi-chevron-right" : "mdi-chevron-left" }}</v-icon>
+            </v-btn>
+          </v-card-title>
+          <v-card-text v-show="!previewCollapsed" class="overflow-auto flex-grow-1">
+            <div class="preview" v-html="description" />
           </v-card-text>
         </v-card>
       </v-col>
 
-      <v-col cols="12" md="3">
+      <v-col :cols="previewCollapsed ? 9 : 5">
         <v-card variant="outlined">
-          <v-card-title>Details</v-card-title>
+          <v-card-title>Description</v-card-title>
           <v-card-text>
+            <RichTextEditor v-model="description" />
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <v-col :cols="previewCollapsed ? 2 : 2">
+        <v-card variant="outlined" class="h-100 d-flex flex-column">
+          <v-card-title>Details</v-card-title>
+          <v-card-text class="flex-grow-1 overflow-auto">
             <v-textarea
               v-model="title"
               label="Title"
@@ -25,23 +34,16 @@
               clearable
               auto-grow
               rows="2"
-              :disabled="preview"
               :rules="[rules.required]"
             />
-
-            <project-select v-model="project" :disabled="preview" excludeDisabled />
-            <incident-type-select :project="project" v-model="incident_type" :disabled="preview" />
-            <incident-priority-select
-              :project="project"
-              v-model="incident_priority"
-              :disabled="preview"
-            />
+            <project-select v-model="project" excludeDisabled />
+            <incident-type-select :project="project" v-model="incident_type" />
+            <incident-priority-select :project="project" v-model="incident_priority" />
             <tag-filter-auto-complete
               :project="project"
               v-model="tags"
               label="Tags"
               model="incident"
-              :disabled="preview"
             />
             <participant-select
               v-model="local_commander"
@@ -49,29 +51,23 @@
               hint="If not entered, the current on-call will be assigned."
               clearable
               :project="project"
-              :disabled="preview"
               :rules="[only_one]"
             />
           </v-card-text>
 
           <v-card-actions>
-            <v-spacer />
-            <v-btn v-if="!preview" color="info" block @click="preview = true"> Preview </v-btn>
-            <div v-else class="d-flex flex-column gap-2 w-100">
-              <v-btn color="primary" block @click="preview = false">Edit</v-btn>
-              <v-btn
-                color="success"
-                block
-                :loading="loading"
-                :disabled="!isValid.value"
-                type="submit"
-              >
-                Submit
-                <template #loader>
-                  <v-progress-linear indeterminate color="white" />
-                </template>
-              </v-btn>
-            </div>
+            <v-btn
+              color="success"
+              block
+              :loading="loading"
+              :disabled="!isValid.value"
+              type="submit"
+            >
+              Submit
+              <template #loader>
+                <v-progress-linear indeterminate color="white" />
+              </template>
+            </v-btn>
           </v-card-actions>
         </v-card>
       </v-col>
@@ -117,7 +113,7 @@ export default {
 
   data() {
     return {
-      preview: false,
+      previewCollapsed: false,
       isSubmitted: false,
       project_faq: null,
       local_commander: null,
@@ -153,6 +149,9 @@ export default {
   },
 
   methods: {
+    togglePreview() {
+      this.previewCollapsed = !this.previewCollapsed
+    },
     getFAQ() {
       if (this.project) {
         DocumentApi.getAll({
@@ -329,5 +328,15 @@ export default {
   padding: 1rem;
   background: #f9f9f9;
   min-height: 300px;
+}
+
+.form-wrapper {
+  background-color: #f0f0f0;
+  min-height: 100vh;
+  padding: 2rem 0;
+}
+
+.v-card {
+  background-color: white !important;
 }
 </style>
