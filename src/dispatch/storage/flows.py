@@ -44,10 +44,6 @@ def create_storage(subject: Subject, storage_members: List[str], db_session: Ses
         {"resource_type": plugin.plugin.slug, "resource_id": external_storage["id"]}
     )
 
-    # we create folders to store logs and screengrabs
-    plugin.instance.create_file(external_storage["resource_id"], "Logs")
-    plugin.instance.create_file(external_storage["resource_id"], "Screengrabs")
-
     # we create the internal storage
     storage_in = StorageCreate(
         resource_id=external_storage["resource_id"],
