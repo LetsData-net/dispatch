@@ -30,7 +30,7 @@ def create_storage(subject: Subject, storage_members: List[str], db_session: Ses
     external_storage_root_id = plugin.configuration.root_id
     try:
         external_storage = plugin.instance.create_file(
-            parent_id=external_storage_root_id, name=subject.name, participants=storage_members
+            parent_id=external_storage_root_id, name=subject.title, participants=storage_members
         )
     except Exception as e:
         log.exception(e)
