@@ -299,10 +299,31 @@ export default {
 </script>
 
 <style scoped>
-.preview-wrapper {
-  overflow-y: auto;
+.row-container {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.col-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+.editor-scroll-area,
+.preview-scroll-area,
+.details-scroll-area {
   flex-grow: 1;
-  max-height: 70vh;
+  overflow-y: auto;
+  padding: 1rem;
 }
 
 .preview {
@@ -312,13 +333,13 @@ export default {
   margin: 1rem;
   background: #f9f9f9;
   min-height: 100%;
-  overflow: auto;
 }
 
 .form-wrapper {
   background-color: #f0f0f0;
-  min-height: 100vh;
-  padding: 2rem 0;
+  height: 100vh;
+  padding: 0;
+  margin: 0;
 }
 
 .v-card {
@@ -331,6 +352,9 @@ export default {
   color: white;
   background: #bbbcc3;
   height: 43px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .v-icon {
@@ -342,5 +366,10 @@ export default {
   height: 28px;
   width: 28px;
   margin: 5px;
+}
+
+::v-deep(.tiptap a) {
+  color: #1e88e5;
+  text-decoration: underline;
 }
 </style>
