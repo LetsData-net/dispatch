@@ -1,24 +1,25 @@
 <template>
   <v-form @submit.prevent="report()" v-slot="{ isValid }" class="form-wrapper">
     <v-row class="ma-4" dense>
-      <v-col :cols="previewCollapsed ? 1 : 5">
-        <v-card variant="outlined" class="d-flex flex-column h-100">
-          <v-card-title class="justify-center">
-            <v-btn icon variant="text" @click="togglePreview">
-              <v-icon>{{ previewCollapsed ? "mdi-chevron-right" : "mdi-chevron-left" }}</v-icon>
-            </v-btn>
-          </v-card-title>
-          <v-card-text v-show="!previewCollapsed" class="overflow-auto flex-grow-1">
-            <div class="preview" v-html="description" />
+      <v-col :cols="previewCollapsed ? 9 : 5">
+        <v-card variant="outlined">
+          <v-card-title>Body of the alert</v-card-title>
+          <v-card-text>
+            <RichTextEditor v-model="description" />
           </v-card-text>
         </v-card>
       </v-col>
 
-      <v-col :cols="previewCollapsed ? 9 : 5">
-        <v-card variant="outlined">
-          <v-card-title>Description</v-card-title>
-          <v-card-text>
-            <RichTextEditor v-model="description" />
+      <v-col :cols="previewCollapsed ? 1 : 5">
+        <v-card variant="outlined" class="d-flex flex-column h-100">
+          <v-card-title class="justify-center">
+            {{ !previewCollapsed ? "Preview of the alert" : "" }}
+            <v-btn icon variant="text" @click="togglePreview">
+              <v-icon>{{ previewCollapsed ? "mdi-eye-off-outline" : "mdi-eye-outline" }}</v-icon>
+            </v-btn>
+          </v-card-title>
+          <v-card-text v-show="!previewCollapsed" class="overflow-auto flex-grow-1">
+            <div class="preview" v-html="description" />
           </v-card-text>
         </v-card>
       </v-col>
@@ -324,8 +325,9 @@ export default {
 <style scoped>
 .preview {
   border: 1px solid #ccc;
-  border-radius: 10px;
+  border-radius: 16px;
   padding: 1rem;
+  margin-top: 1rem;
   background: #f9f9f9;
   min-height: 70vh;
 }
@@ -338,5 +340,24 @@ export default {
 
 .v-card {
   background-color: white !important;
+  border-radius: 16px;
+}
+
+.v-card-title {
+  text-transform: uppercase;
+  color: white;
+  background: #bbbcc3;
+  height: 43px;
+}
+
+.v-icon {
+  color: white;
+}
+
+.v-btn {
+  background-color: white;
+  height: 28px;
+  width: 28px;
+  margin: 5px;
 }
 </style>
