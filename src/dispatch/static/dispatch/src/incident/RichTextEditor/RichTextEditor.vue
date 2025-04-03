@@ -124,7 +124,7 @@
     </div>
 
     <div class="editor-wrapper">
-      <editor-content :editor="editor" class="tiptap ProseMirror" />
+      <editor-content :editor="editor" class="tiptap ProseMirror editor" />
     </div>
 
     <v-dialog v-model="linkDialog" persistent max-width="400px">
@@ -290,17 +290,31 @@ export default {
 
 <style lang="scss" scoped>
 .container {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-height: 0;
   padding: 1rem;
-  font-family: sans-serif;
+}
+
+.editor-wrapper {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .ProseMirror {
+  flex-grow: 1;
+  overflow-y: auto;
   border: 1px solid #ccc;
   border-radius: 15px;
   min-height: 200px;
   max-height: 400px;
-  padding: 10px;
-  overflow-y: auto;
+  height: 100%;
+  padding: 10px 20px 20px;
+  margin: 5px;
+  background-color: white;
 }
 
 .button-group {

@@ -1,20 +1,20 @@
 <template>
   <v-form @submit.prevent="report()" v-slot="{ isValid }" class="form-wrapper">
-    <v-row class="ma-4" dense>
-      <v-col :cols="previewCollapsed ? 9 : 5">
-        <v-card variant="outlined">
+    <v-row class="ma-4 h-100" dense>
+      <div :style="previewCollapsed ? 'width: 64%' : 'width: 34%'" class="d-flex flex-column">
+        <v-card variant="outlined" class="fill-height d-flex flex-column">
           <v-card-title>Body of the alert</v-card-title>
-          <v-card-text>
-            <RichTextEditor v-model="description" />
+          <v-card-text class="flex-grow-1 overflow-hidden d-flex flex-column">
+            <RichTextEditor v-model="description" class="flex-grow-1" />
           </v-card-text>
         </v-card>
-      </v-col>
+      </div>
 
-      <v-col :cols="previewCollapsed ? 1 : 5">
-        <v-card variant="outlined" class="d-flex flex-column h-100">
+      <div :style="previewCollapsed ? 'width: 4%' : 'width: 34%'" class="d-flex flex-column">
+        <v-card variant="outlined" class="fill-height d-flex flex-column">
           <v-card-title class="justify-center">
             {{ !previewCollapsed ? "Preview of the alert" : "" }}
-            <v-btn icon="" variant="text" @click="togglePreview">
+            <v-btn icon variant="text" @click="togglePreview">
               <v-icon>{{ previewCollapsed ? "mdi-eye-off-outline" : "mdi-eye-outline" }}</v-icon>
             </v-btn>
           </v-card-title>
@@ -22,10 +22,10 @@
             <div class="preview" v-html="description" />
           </v-card-text>
         </v-card>
-      </v-col>
+      </div>
 
-      <v-col :cols="previewCollapsed ? 2 : 2">
-        <v-card variant="outlined" class="h-100 d-flex flex-column">
+      <div style="width: 23%" class="d-flex flex-column">
+        <v-card variant="outlined" class="fill-height d-flex flex-column">
           <v-card-title>Details</v-card-title>
           <v-card-text class="flex-grow-1 overflow-auto">
             <v-textarea
@@ -71,7 +71,7 @@
             </v-btn>
           </v-card-actions>
         </v-card>
-      </v-col>
+      </div>
     </v-row>
   </v-form>
 </template>
@@ -338,6 +338,10 @@ export default {
 
 .v-icon {
   color: white;
+}
+
+.v-row {
+  gap: 30px;
 }
 
 .v-btn {
