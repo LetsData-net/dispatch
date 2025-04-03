@@ -5,7 +5,7 @@
         <v-card variant="outlined">
           <v-card-title>Body of the alert</v-card-title>
           <v-card-text>
-            <RichTextEditor v-model="description" />
+            <RichTextEditor ref="richEditor" />
           </v-card-text>
         </v-card>
       </v-col>
@@ -233,7 +233,7 @@ export default {
     }
 
     if (this.$route.query.description) {
-      this.description = this.$route.query.description
+      this.description = this.$refs.richEditor.getHtml()
     }
 
     if (this.$route.query.tag) {

@@ -2,87 +2,30 @@
   <div v-if="editor" class="container">
     <div class="control-group">
       <div class="button-group">
-        <!-- Buttons -->
-        <button
-          @click="editor.chain().focus().toggleBold().run()"
-          :disabled="!editor.can().chain().focus().toggleBold().run()"
-          :class="{ 'is-active': editor.isActive('bold') }"
-          title="Bold"
+        <div
+          v-for="button in formattingButtons"
+          :key="button.title"
+          :title="button.title"
+          :class="['editor-button', { 'is-active': button.isActive() }]"
+          @click="button.action"
         >
-          <strong>B</strong>
-        </button>
+          <span v-html="button.label"></span>
+        </div>
 
-        <button
-          @click="editor.chain().focus().toggleItalic().run()"
-          :disabled="!editor.can().chain().focus().toggleItalic().run()"
-          :class="{ 'is-active': editor.isActive('italic') }"
-          title="Italic"
-        >
-          <em>I</em>
-        </button>
-
-        <button
-          @click="editor.chain().focus().toggleStrike().run()"
-          :disabled="!editor.can().chain().focus().toggleStrike().run()"
-          :class="{ 'is-active': editor.isActive('strike') }"
-          title="Strikethrough"
-        >
-          <s>S</s>
-        </button>
-
-        <button
-          @click="editor.chain().focus().toggleHeading({ level: 1 }).run()"
-          :class="{ 'is-active': editor.isActive('heading', { level: 1 }) }"
-          title="Heading 1"
-        >
-          H1
-        </button>
-
-        <button
-          @click="editor.chain().focus().toggleHeading({ level: 2 }).run()"
-          :class="{ 'is-active': editor.isActive('heading', { level: 2 }) }"
-          title="Heading 2"
-        >
-          h2
-        </button>
-
-        <button
-          @click="editor.chain().focus().toggleBulletList().run()"
-          :class="{ 'is-active': editor.isActive('bulletList') }"
-          title="Bullet list"
-        >
-          • List
-        </button>
-
-        <button
-          @click="editor.chain().focus().toggleOrderedList().run()"
-          :class="{ 'is-active': editor.isActive('orderedList') }"
-          title="Numbered list"
-        >
-          1. List
-        </button>
-
-        <button @click="setLink" title="Insert link">Link</button>
-
-        <button @click="editor.chain().focus().setHorizontalRule().run()" title="Insert divider">
-          Divider
-        </button>
-
-        <button @click="editor.chain().focus().setHardBreak().run()" title="Insert hard break">
-          [ hard break ]
-        </button>
-
-        <button
+        <div
           v-for="emoji in emojis"
           :key="emoji.char"
-          @click="insertEmoji(emoji.char)"
           :title="emoji.name"
+          class="editor-button"
+          @click="insertEmoji(emoji.char)"
         >
           {{ emoji.char }}
-        </button>
+        </div>
 
         <div class="emoji-dropdown" @click.stop>
-          <button @click="toggleEmojiDropdown" title="All emojis">all emojis</button>
+          <div class="editor-button" @click="toggleEmojiDropdown" title="All emojis">
+            all emojis
+          </div>
           <div v-if="showEmojiDropdown" class="emoji-dropdown-list">
             <input
               type="text"
@@ -150,19 +93,17 @@ import emojiData from "emoji.json"
 
 export default {
   name: "RichTextEditor",
-  components: {
-    EditorContent,
-  },
+  components: { EditorContent },
   props: {
     modelValue: {
       type: String,
       default: "",
     },
   },
-  emits: ["update:modelValue"],
   data() {
     return {
       editor: null,
+      localHtml: "",
       emojis: [
         { char: "📌", name: "pushpin" },
         { char: "➡️", name: "right arrow" },
@@ -175,7 +116,6 @@ export default {
       allEmojis: emojiData.map((e) => ({ char: e.char, name: e.name })),
       showEmojiDropdown: false,
       emojiSearch: "",
-      // Link Dialog
       linkDialog: false,
       linkText: "",
       linkUrl: "",
@@ -184,16 +124,73 @@ export default {
   },
   computed: {
     filteredAllEmojis() {
-      return this.allEmojis.filter((emoji) => {
-        return emoji.name.toLowerCase().includes(this.emojiSearch.toLowerCase())
-      })
+      return this.allEmojis.filter((emoji) =>
+        emoji.name.toLowerCase().includes(this.emojiSearch.toLowerCase())
+      )
     },
-  },
-  watch: {
-    modelValue(newValue) {
-      if (this.editor && newValue !== this.editor.getHTML()) {
-        this.editor.commands.setContent(newValue, false)
-      }
+    formattingButtons() {
+      return [
+        {
+          label: "<strong>B</strong>",
+          title: "Bold",
+          isActive: () => this.editor.isActive("bold"),
+          action: () => this.editor.chain().focus().toggleBold().run(),
+        },
+        {
+          label: "<em>I</em>",
+          title: "Italic",
+          isActive: () => this.editor.isActive("italic"),
+          action: () => this.editor.chain().focus().toggleItalic().run(),
+        },
+        {
+          label: "<s>S</s>",
+          title: "Strikethrough",
+          isActive: () => this.editor.isActive("strike"),
+          action: () => this.editor.chain().focus().toggleStrike().run(),
+        },
+        {
+          label: "H1",
+          title: "Heading 1",
+          isActive: () => this.editor.isActive("heading", { level: 1 }),
+          action: () => this.editor.chain().focus().toggleHeading({ level: 1 }).run(),
+        },
+        {
+          label: "h2",
+          title: "Heading 2",
+          isActive: () => this.editor.isActive("heading", { level: 2 }),
+          action: () => this.editor.chain().focus().toggleHeading({ level: 2 }).run(),
+        },
+        {
+          label: "• List",
+          title: "Bullet List",
+          isActive: () => this.editor.isActive("bulletList"),
+          action: () => this.editor.chain().focus().toggleBulletList().run(),
+        },
+        {
+          label: "1. List",
+          title: "Ordered List",
+          isActive: () => this.editor.isActive("orderedList"),
+          action: () => this.editor.chain().focus().toggleOrderedList().run(),
+        },
+        {
+          label: "Link",
+          title: "Insert link",
+          isActive: () => false,
+          action: this.setLink,
+        },
+        {
+          label: "Divider",
+          title: "Insert divider",
+          isActive: () => false,
+          action: () => this.editor.chain().focus().setHorizontalRule().run(),
+        },
+        {
+          label: "[ hard break ]",
+          title: "Insert hard break",
+          isActive: () => false,
+          action: () => this.editor.chain().focus().setHardBreak().run(),
+        },
+      ]
     },
   },
   mounted() {
@@ -215,7 +212,7 @@ export default {
       ],
       content: this.modelValue,
       onUpdate: ({ editor }) => {
-        this.$emit("update:modelValue", editor.getHTML())
+        this.localHtml = editor.getHTML()
       },
     })
   },
@@ -224,11 +221,14 @@ export default {
     document.removeEventListener("click", this.handleClickOutside)
   },
   methods: {
-    insertEmoji(emojiChar) {
-      this.editor.chain().focus().insertContent(emojiChar + " ").run()
+    getHtml() {
+      return this.editor ? this.editor.getHTML() : ""
     },
-    insertEmojiFromDropdown(emojiChar) {
-      this.insertEmoji(emojiChar)
+    insertEmoji(char) {
+      this.editor.chain().focus().insertContent(char + " ").run()
+    },
+    insertEmojiFromDropdown(char) {
+      this.insertEmoji(char)
       this.showEmojiDropdown = false
       this.emojiSearch = ""
     },
@@ -298,24 +298,20 @@ export default {
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-bottom: 1rem;
+}
 
-  button {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.9rem;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    background-color: #f9f9f9;
-    cursor: pointer;
+.editor-button {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.9rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: #f9f9f9;
+  cursor: pointer;
+  user-select: none;
 
-    &.is-active {
-      background-color: #dbeafe;
-      font-weight: bold;
-    }
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
+  &.is-active {
+    background-color: #dbeafe;
+    font-weight: bold;
   }
 }
 
