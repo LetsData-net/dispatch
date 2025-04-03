@@ -2,6 +2,7 @@
   <div v-if="editor" class="container">
     <div class="control-group">
       <div class="button-group">
+        <!-- Buttons -->
         <button
           @click="editor.chain().focus().toggleBold().run()"
           :disabled="!editor.can().chain().focus().toggleBold().run()"
@@ -110,6 +111,31 @@
     <div class="editor-wrapper">
       <editor-content :editor="editor" class="tiptap ProseMirror" />
     </div>
+
+    <!-- Link Dialog -->
+    <v-dialog v-model="linkDialog" persistent max-width="400px">
+      <v-card>
+        <v-card-title>Insert or Edit Link</v-card-title>
+        <v-card-text>
+          <v-text-field
+            v-model="linkText"
+            label="Text"
+            @keydown.enter.prevent="applyLink"
+          />
+          <v-text-field
+            v-model="linkUrl"
+            label="URL"
+            @keydown.enter.prevent="applyLink"
+          />
+        </v-card-text>
+        <v-card-actions class="justify-end">
+          <v-btn text @click="removeLink" v-if="isEditingLink">Remove</v-btn>
+          <v-spacer />
+          <v-btn text @click="closeLinkDialog">Cancel</v-btn>
+          <v-btn color="primary" @click="applyLink">Apply</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -149,6 +175,11 @@ export default {
       allEmojis: emojiData.map((e) => ({ char: e.char, name: e.name })),
       showEmojiDropdown: false,
       emojiSearch: "",
+      // Link Dialog
+      linkDialog: false,
+      linkText: "",
+      linkUrl: "",
+      isEditingLink: false,
     }
   },
   computed: {
@@ -194,26 +225,12 @@ export default {
   },
   methods: {
     insertEmoji(emojiChar) {
-      this.editor
-        .chain()
-        .focus()
-        .insertContent(emojiChar + " ")
-        .run()
+      this.editor.chain().focus().insertContent(emojiChar + " ").run()
     },
     insertEmojiFromDropdown(emojiChar) {
       this.insertEmoji(emojiChar)
       this.showEmojiDropdown = false
       this.emojiSearch = ""
-    },
-    setLink() {
-      const previousUrl = this.editor.getAttributes("link").href
-      const url = window.prompt("Enter the URL", previousUrl)
-      if (url === null) return
-      if (url === "") {
-        this.editor.chain().focus().unsetLink().run()
-        return
-      }
-      this.editor.chain().focus().setLink({ href: url }).run()
     },
     toggleEmojiDropdown() {
       this.showEmojiDropdown = !this.showEmojiDropdown
@@ -222,6 +239,40 @@ export default {
       if (!this.$el.contains(e.target)) {
         this.showEmojiDropdown = false
       }
+    },
+    setLink() {
+      const { href } = this.editor.getAttributes("link")
+      const selectedText = this.editor.state.doc.textBetween(
+        this.editor.state.selection.from,
+        this.editor.state.selection.to,
+        " "
+      )
+      this.linkUrl = href || ""
+      this.linkText = selectedText || href || ""
+      this.isEditingLink = !!href
+      this.linkDialog = true
+    },
+    applyLink() {
+      if (this.linkUrl === "") {
+        this.editor.chain().focus().unsetLink().run()
+      } else {
+        this.editor
+          .chain()
+          .focus()
+          .insertContent(`<a href="${this.linkUrl}" target="_blank">${this.linkText}</a>`)
+          .run()
+      }
+      this.closeLinkDialog()
+    },
+    removeLink() {
+      this.editor.chain().focus().unsetLink().run()
+      this.closeLinkDialog()
+    },
+    closeLinkDialog() {
+      this.linkDialog = false
+      this.linkText = ""
+      this.linkUrl = ""
+      this.isEditingLink = false
     },
   },
 }

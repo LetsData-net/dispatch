@@ -309,7 +309,7 @@ export default {
   border: 1px solid #ccc;
   border-radius: 16px;
   padding: 1rem;
-  margin-top: 1rem;
+  margin: 1rem;
   background: #f9f9f9;
   min-height: 100%;
   overflow: auto;
