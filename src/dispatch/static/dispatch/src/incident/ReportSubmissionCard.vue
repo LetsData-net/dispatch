@@ -14,7 +14,7 @@
         <v-card variant="outlined" class="d-flex flex-column h-100">
           <v-card-title class="justify-center">
             {{ !previewCollapsed ? "Preview of the alert" : "" }}
-            <v-btn icon variant="text" @click="togglePreview">
+            <v-btn icon="" variant="text" @click="togglePreview">
               <v-icon>{{ previewCollapsed ? "mdi-eye-off-outline" : "mdi-eye-outline" }}</v-icon>
             </v-btn>
           </v-card-title>
@@ -177,30 +177,6 @@ export default {
           }
         })
       }
-    },
-    copyView: function () {
-      let store = this.$store
-      navigator.clipboard.writeText(window.location).then(
-        function () {
-          store.commit(
-            "notification_backend/addBeNotification",
-            {
-              text: "View copied to clipboard.",
-            },
-            { root: true }
-          )
-        },
-        function () {
-          store.commit(
-            "notification_backend/addBeNotification",
-            {
-              text: "Failed to copy view to clipboard.",
-              color: "red",
-            },
-            { root: true }
-          )
-        }
-      )
     },
     ...mapActions("incident", ["report", "get", "resetSelected"]),
   },
