@@ -5,7 +5,7 @@
         <v-card variant="outlined">
           <v-card-title>Body of the alert</v-card-title>
           <v-card-text>
-            <RichTextEditor ref="richEditor" />
+            <RichTextEditor v-model="description" />
           </v-card-text>
         </v-card>
       </v-col>
@@ -233,7 +233,7 @@ export default {
     }
 
     if (this.$route.query.description) {
-      this.description = this.$refs.richEditor.getHtml()
+      this.description = this.$route.query.description
     }
 
     if (this.$route.query.tag) {
@@ -299,31 +299,10 @@ export default {
 </script>
 
 <style scoped>
-.row-container {
-  height: 100vh;
-  overflow: hidden;
-}
-
-.col-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.card-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border-radius: 16px;
-}
-
-.editor-scroll-area,
-.preview-scroll-area,
-.details-scroll-area {
-  flex-grow: 1;
+.preview-wrapper {
   overflow-y: auto;
-  padding: 1rem;
+  flex-grow: 1;
+  max-height: 70vh;
 }
 
 .preview {
@@ -333,13 +312,13 @@ export default {
   margin: 1rem;
   background: #f9f9f9;
   min-height: 100%;
+  overflow: auto;
 }
 
 .form-wrapper {
   background-color: #f0f0f0;
-  height: 100vh;
-  padding: 0;
-  margin: 0;
+  min-height: 100vh;
+  padding: 2rem 0;
 }
 
 .v-card {
