@@ -299,13 +299,20 @@ export default {
 </script>
 
 <style scoped>
+.preview-wrapper {
+  overflow-y: auto;
+  flex-grow: 1;
+  max-height: 70vh;
+}
+
 .preview {
   border: 1px solid #ccc;
   border-radius: 16px;
   padding: 1rem;
   margin-top: 1rem;
   background: #f9f9f9;
-  min-height: 70vh;
+  min-height: 100%;
+  overflow: auto;
 }
 
 .form-wrapper {
