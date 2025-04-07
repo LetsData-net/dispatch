@@ -823,20 +823,6 @@ def case_create_resources_flow(
                 subject=case, storage_members=storage_members, db_session=db_session
             )
 
-        # we create the investigation document
-        if not case.case_document:
-            document_flows.create_document(
-                subject=case,
-                document_type=DocumentResourceTypes.case,
-                document_template=case.case_type.case_template_document,
-                db_session=db_session,
-            )
-
-        # we update the case document
-        document_flows.update_document(
-            document=case.case_document, project_id=case.project.id, db_session=db_session
-        )
-
     try:
         # we create the conversation and add participants to the thread
         conversation_flows.create_case_conversation(case, conversation_target, db_session)

@@ -214,15 +214,6 @@ def incident_create_resources(
             subject=incident, storage_members=storage_members, db_session=db_session
         )
 
-    # we create the incident document
-    if not incident.incident_document:
-        document_flows.create_document(
-            subject=incident,
-            document_type=DocumentResourceTypes.incident,
-            document_template=incident.incident_type.incident_template_document,
-            db_session=db_session,
-        )
-
     # we create the conference room
     if not incident.conference:
         conference_participants = []
@@ -245,11 +236,6 @@ def incident_create_resources(
 
     # we update the incident ticket
     ticket_flows.update_incident_ticket(incident_id=incident.id, db_session=db_session)
-
-    # we update the incident document
-    document_flows.update_document(
-        document=incident.incident_document, project_id=incident.project.id, db_session=db_session
-    )
 
     # we set the conversation topic
     conversation_flows.set_conversation_topic(incident, db_session)
